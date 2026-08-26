@@ -10,15 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9dfb6afc39b31bd4f9ecec774d53c839, type: 3}
-  m_Name: NPC_001
+  m_Name: NewNPCData
   m_EditorClassIdentifier: Assembly-CSharp::NPCData
-  npcName: "\uC544\uB860"
-  country: "\u25A0\u25A0\u25A0\uAD6D OOO\uC2DC"
-  occupation: AB-1234
-  realDocumentCode: AB-1234
-  answers:
-  - "\uCCAB \uBC88\uC9F8 \uB2F5\uBCC0"
-  - "\uB450 \uBC88\uC9F8 \uB2F5\uBCC0"
-  - "\uC138 \uBC88\uC9F8 \uB2F5\uBCC0"
+  npcName: 
+  gender: 0
+  age: 0
+  country: 
+  occupation: 
+  residence: 
+  documentCode: 
+  passportCode: 
+  hasCriminalRecord: 0
+  familyRelationship: 
+  psychiatricHistory: 
+  passportExpiryDate: 
+  answers: []
   passport: {fileID: 0}
   entryPermit: {fileID: 0}
