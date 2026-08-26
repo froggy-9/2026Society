@@ -17,9 +17,7 @@ public class EvaluationManager : MonoBehaviour
     public int MissedQuotaCount { get; private set; }
     public float Accuracy { get; private set; }
 
-    /// <summary>
-    /// 하루 평가 초기화
-    /// </summary>
+    /// <summary> 하루 평가 초기화 </summary>
     public void ResetDay()
     {
         DayScore = 0;
@@ -37,18 +35,14 @@ public class EvaluationManager : MonoBehaviour
         Accuracy = 0f;
     }
 
-    /// <summary>
-    /// 게임 전체 초기화
-    /// </summary>
+    /// <summary> 게임 전체 초기화 </summary>
     public void ResetGame()
     {
         TotalScore = 0;
         ResetDay();
     }
 
-    /// <summary>
-    /// 심사 결과 제출
-    /// </summary>
+    /// <summary> 심사 결과 제출 </summary>
     public void SubmitJudgement(bool playerApproved, bool npcShouldBeApproved, bool hardPenalty)
     {
         if (playerApproved)
@@ -64,9 +58,7 @@ public class EvaluationManager : MonoBehaviour
         TotalScore += score;
     }
 
-    /// <summary>
-    /// 하루 종료 계산
-    /// </summary>
+    /// <summary> 하루 종료 계산 </summary>
     public void CalculateResult(int inspectedCount, int quota)
     {
         MissedQuotaCount = Mathf.Max(0, quota - inspectedCount);
@@ -76,9 +68,7 @@ public class EvaluationManager : MonoBehaviour
             : (float)CorrectCount / inspectedCount;
     }
 
-    /// <summary>
-    /// 게임오버 조건
-    /// </summary>
+    /// <summary> 게임오버 조건 </summary>
     public bool IsGameOver()
     {
         return TotalScore < 0 || MissedQuotaCount > 0;
