@@ -9,13 +9,10 @@ public class NPCData : ScriptableObject
     [Header("기본 정보")]
     public string npcName;
 
-    [Header("NPC 실제 정보")]
+    [Header("NPC 정보")]
     public string country;
     public string occupation;
     public string realDocumentCode;
-
-    [Header("위조 여부")]
-    public bool isForgery;
 
     [Header("대화")]
     [TextArea(3, 5)]
