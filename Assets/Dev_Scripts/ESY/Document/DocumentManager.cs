@@ -2,8 +2,14 @@ using UnityEngine;
 
 public class DocumentManager : MonoBehaviour
 {
-    [Header("현재 NPC")]
+    [Header("Managers")]
     [SerializeField] private NPCManager npcManager;
+
+    private void Awake()
+    {
+        if (npcManager == null)
+            npcManager = FindObjectOfType<NPCManager>();
+    }
 
     private NPCData CurrentNPC
     {
@@ -23,7 +29,7 @@ public class DocumentManager : MonoBehaviour
     {
         if (CurrentNPC == null)
         {
-            Debug.LogWarning("현재 NPC가 없습니다.");
+            Debug.LogWarning("Current NPC is missing.");
             return null;
         }
 
@@ -34,7 +40,7 @@ public class DocumentManager : MonoBehaviour
     {
         if (CurrentNPC == null)
         {
-            Debug.LogWarning("현재 NPC가 없습니다.");
+            Debug.LogWarning("Current NPC is missing.");
             return null;
         }
 

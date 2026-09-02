@@ -10,20 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9dfb6afc39b31bd4f9ecec774d53c839, type: 3}
-  m_Name: NewNPCData
+  m_Name: Npc1Data
   m_EditorClassIdentifier: Assembly-CSharp::NPCData
   npcName: 
   gender: 0
   age: 0
-  country: 
-  occupation: 
-  residence: 
+  job: 
+  address: 
+  family: []
   documentCode: 
   passportCode: 
   hasCriminalRecord: 0
-  familyRelationship: 
+  criminalRecordDetails: 
   psychiatricHistory: 
-  passportExpiryDate: 
-  answers: []
   passport: {fileID: 0}
   entryPermit: {fileID: 0}

@@ -6,37 +6,34 @@ public enum DocumentType
     EntryPermit
 }
 
-[CreateAssetMenu(
-    fileName = "NewDocumentData",
-    menuName = "Refugees/Document Data"
-)]
 public class DocumentData : ScriptableObject
 {
-    [Header("문서 종류")]
+    [Header("Document")]
     public DocumentType documentType;
 
-    [Header("기본 정보")]
+    [Header("Person")]
     public string npcName;
     public Gender gender;
     public int age;
+    public Sprite portrait;
 
-    [Header("신상 정보")]
+    [Header("Profile")]
     public string occupation;
     public string residence;
+    public string familyRelationship;
 
-    [Header("문서 정보")]
+    [Header("Codes")]
     public string documentCode;
     public string passportCode;
 
-    [Header("신원 정보")]
+    [Header("Risk")]
     public bool hasCriminalRecord;
     public string criminalRecordDetails;
-
-    public string familyRelationship;
 
     [TextArea(2, 5)]
     public string psychiatricHistory;
 
-    [Header("여권")]
+    [Header("Passport")]
+    [Tooltip("Format: yyyy-MM-dd")]
     public string passportExpiryDate;
 }

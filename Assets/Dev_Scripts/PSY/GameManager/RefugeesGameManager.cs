@@ -4,16 +4,20 @@ public class RefugeesGameManager : MonoBehaviour
 {
     public static RefugeesGameManager Instance;
 
+    public event System.Action<GameState> StateChanged;
+    public event System.Action<int> DayStarted;
+    public event System.Action JudgementSubmitted;
+
     [Header("Managers")]
     [SerializeField] private DayManager dayManager;
     [SerializeField] private EvaluationManager evaluationManager;
 
     [Header("Game")]
-    [SerializeField] private int maxDay = 7;
+    [SerializeField] private int maxDay = 4;
 
     public int CurrentDay { get; private set; }
 
-    public GameState CurrentState { get; private set; }
+    public GameState CurrentState { get; private set; } = GameState.None;
 
     public float RemainingTime { get; private set; }
 
@@ -26,7 +30,16 @@ public class RefugeesGameManager : MonoBehaviour
         if (Instance == null)
             Instance = this;
         else
+        {
             Destroy(gameObject);
+            return;
+        }
+
+        if (dayManager == null)
+            dayManager = FindObjectOfType<DayManager>();
+
+        if (evaluationManager == null)
+            evaluationManager = FindObjectOfType<EvaluationManager>();
     }
 
     private void Update()
@@ -45,18 +58,38 @@ public class RefugeesGameManager : MonoBehaviour
 
     public void GameStart()
     {
-        evaluationManager.ResetGame();
+        PleaResultLog.Clear();
 
-        CurrentDay = 1;
+        int slot = SaveCardMenu.GetSelectedSlot();
+        bool canContinue = !SaveCardMenu.ShouldStartNewGame() && SaveCardMenu.HasSave(slot);
+
+        if (canContinue)
+        {
+            NpcLook.LoadUsedPhotos();
+            evaluationManager?.LoadGame(SaveCardMenu.GetSavedScore(slot));
+            CurrentDay = SaveCardMenu.GetSavedDay(slot);
+        }
+        else
+        {
+            NpcLook.ResetUsedPhotos();
+            evaluationManager?.ResetGame();
+            CurrentDay = 1;
+        }
 
         StartDay();
     }
 
     private void StartDay()
     {
+        if (dayManager == null)
+        {
+            SetState(GameState.GameOver);
+            return;
+        }
+
         if (!dayManager.LoadDay(CurrentDay))
         {
-            CurrentState = GameState.GameOver;
+            SetState(GameState.GameOver);
             return;
         }
 
@@ -65,7 +98,8 @@ public class RefugeesGameManager : MonoBehaviour
         InspectedNpcCount = 0;
         RemainingTime = dayManager.DayTime;
 
-        CurrentState = GameState.News;
+        SetState(GameState.News);
+        DayStarted?.Invoke(CurrentDay);
     }
 
     public void StartInspection()
@@ -73,12 +107,15 @@ public class RefugeesGameManager : MonoBehaviour
         if (CurrentState != GameState.News)
             return;
 
-        CurrentState = GameState.Inspection;
+        SetState(GameState.Inspection);
     }
 
-    public void SubmitJudgement(bool playerApproved, bool npcShouldBeApproved)
+    public void SubmitJudgement(bool playerApproved, bool npcShouldBeApproved, NPCData npc = null, string reason = "")
     {
         if (CurrentState != GameState.Inspection)
+            return;
+
+        if (evaluationManager == null)
             return;
 
         InspectedNpcCount++;
@@ -88,8 +125,12 @@ public class RefugeesGameManager : MonoBehaviour
         evaluationManager.SubmitJudgement(
             playerApproved,
             npcShouldBeApproved,
-            hardPenalty
+            hardPenalty,
+            npc,
+            reason
         );
+
+        JudgementSubmitted?.Invoke();
     }
 
     public void EndDay()
@@ -97,18 +138,26 @@ public class RefugeesGameManager : MonoBehaviour
         if (CurrentState != GameState.Inspection)
             return;
 
+        if (evaluationManager == null || dayManager == null)
+        {
+            SetState(GameState.GameOver);
+            return;
+        }
+
         evaluationManager.CalculateResult(
             InspectedNpcCount,
             dayManager.Quota
         );
 
+        SaveCardMenu.SaveProgress(CurrentDay, evaluationManager.TotalScore);
+
         if (evaluationManager.IsGameOver())
         {
-            CurrentState = GameState.GameOver;
+            SetState(GameState.GameOver);
             return;
         }
 
-        CurrentState = GameState.Result;
+        SetState(GameState.Result);
     }
 
     public void NextDay()
@@ -118,7 +167,7 @@ public class RefugeesGameManager : MonoBehaviour
 
         if (CurrentDay >= maxDay)
         {
-            CurrentState = GameState.GameOver;
+            SetState(GameState.GameOver);
             return;
         }
 
@@ -137,13 +186,13 @@ public class RefugeesGameManager : MonoBehaviour
     {
         if (CurrentState == GameState.Pause)
         {
-            CurrentState = previousState;
+            SetState(previousState);
             Time.timeScale = 1f;
             return;
         }
 
         previousState = CurrentState;
-        CurrentState = GameState.Pause;
+        SetState(GameState.Pause);
         Time.timeScale = 0f;
     }
 
@@ -154,21 +203,40 @@ public class RefugeesGameManager : MonoBehaviour
 
     public NewsSO GetCurrentNews()
     {
-        return dayManager.CurrentNews;
+        return dayManager != null ? dayManager.CurrentNews : null;
     }
 
     public System.Collections.Generic.List<RuleSO> GetCurrentRules()
     {
-        return dayManager.CurrentRules;
+        return dayManager != null ? dayManager.CurrentRules : null;
+    }
+
+    public RuleSO GetTodayRule()
+    {
+        return dayManager != null ? dayManager.TodayRule : null;
+    }
+
+    public string GetCurrentRuleDescription()
+    {
+        return dayManager != null ? dayManager.CurrentRuleDescription : string.Empty;
     }
 
     public DayDataSO GetCurrentDayData()
     {
-        return dayManager.CurrentDayData;
+        return dayManager != null ? dayManager.CurrentDayData : null;
     }
 
     public EvaluationManager GetEvaluation()
     {
         return evaluationManager;
+    }
+
+    private void SetState(GameState nextState)
+    {
+        if (CurrentState == nextState)
+            return;
+
+        CurrentState = nextState;
+        StateChanged?.Invoke(CurrentState);
     }
 }

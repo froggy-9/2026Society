@@ -11,97 +11,93 @@ public class DeskContentPanZoom : MonoBehaviour, IDragHandler, IScrollHandler
     [SerializeField] private float minZoom = 1f;
     [SerializeField] private float maxZoom = 2.5f;
 
+    [Header("Move")]
+    [SerializeField] private float dragSensitivity = 0.9f;
+
+    [Header("Smooth")]
+    [SerializeField] private float moveSmooth = 22f;
+    [SerializeField] private float zoomSmooth = 18f;
+
     private RectTransform deskArea;
+    private Vector2 targetPosition;
+    private float targetZoom;
+    private bool initialized;
 
     private void Awake()
     {
         deskArea = GetComponent<RectTransform>();
+        ResetTarget();
     }
 
-    // =========================
-    // 드래그
-    // =========================
+    private void OnEnable()
+    {
+        ResetTarget();
+    }
+
+    private void Update()
+    {
+        if (deskContent == null || deskArea == null || !initialized)
+            return;
+
+        float moveT = 1f - Mathf.Exp(-moveSmooth * Time.deltaTime);
+        float zoomT = 1f - Mathf.Exp(-zoomSmooth * Time.deltaTime);
+
+        float zoom = Mathf.Lerp(deskContent.localScale.x, targetZoom, zoomT);
+        Vector2 position = Vector2.Lerp(
+            deskContent.anchoredPosition,
+            ClampPosition(targetPosition, zoom),
+            moveT
+        );
+
+        if (Mathf.Abs(zoom - targetZoom) < 0.001f)
+            zoom = targetZoom;
+
+        if (Vector2.Distance(position, targetPosition) < 0.01f)
+            position = targetPosition;
+
+        deskContent.localScale = new Vector3(zoom, zoom, 1f);
+        deskContent.anchoredPosition = position;
+    }
 
     public void OnDrag(PointerEventData eventData)
     {
-        Vector2 currentPosition = deskContent.anchoredPosition;
+        if (deskContent == null || deskArea == null)
+            return;
 
-        currentPosition += eventData.delta;
-
-        deskContent.anchoredPosition =
-            ClampPosition(currentPosition);
+        targetPosition += eventData.delta * dragSensitivity;
+        targetPosition = ClampPosition(targetPosition, targetZoom);
     }
-
-    // =========================
-    // 줌
-    // =========================
 
     public void OnScroll(PointerEventData eventData)
     {
+        if (deskContent == null || deskArea == null)
+            return;
+
         float scroll = eventData.scrollDelta.y;
-
-        float currentZoom = deskContent.localScale.x;
-
-        float newZoom =
-            currentZoom + scroll * zoomSpeed;
-
-        newZoom = Mathf.Clamp(
-            newZoom,
-            minZoom,
-            maxZoom
-        );
-
-        deskContent.localScale = new Vector3(
-            newZoom,
-            newZoom,
-            1f
-        );
-
-        // 줌 후에도 영역 밖으로 나가지 않도록 위치 보정
-        deskContent.anchoredPosition =
-            ClampPosition(deskContent.anchoredPosition);
+        targetZoom = Mathf.Clamp(targetZoom + scroll * zoomSpeed, minZoom, maxZoom);
+        targetPosition = ClampPosition(targetPosition, targetZoom);
     }
 
-    // =========================
-    // 이동 범위 제한
-    // =========================
-
-    private Vector2 ClampPosition(Vector2 position)
+    private void ResetTarget()
     {
-        Vector2 contentSize =
-            Vector2.Scale(
-                deskContent.rect.size,
-                deskContent.localScale
-            );
+        if (deskContent == null)
+            return;
 
-        Vector2 areaSize =
-            deskArea.rect.size;
+        targetPosition = deskContent.anchoredPosition;
+        targetZoom = Mathf.Clamp(deskContent.localScale.x, minZoom, maxZoom);
+        initialized = true;
+    }
 
-        float minX =
-            (areaSize.x - contentSize.x) / 2f;
+    private Vector2 ClampPosition(Vector2 position, float zoom)
+    {
+        Vector2 contentSize = deskContent.rect.size * zoom;
+        Vector2 areaSize = deskArea.rect.size;
 
-        float maxX =
-            (contentSize.x - areaSize.x) / 2f;
+        float maxX = Mathf.Max(0f, (contentSize.x - areaSize.x) / 2f);
+        float maxY = Mathf.Max(0f, (contentSize.y - areaSize.y) / 2f);
 
-        float minY =
-            (areaSize.y - contentSize.y) / 2f;
-
-        float maxY =
-            (contentSize.y - areaSize.y) / 2f;
-
-        position.x =
-            Mathf.Clamp(
-                position.x,
-                minX,
-                maxX
-            );
-
-        position.y =
-            Mathf.Clamp(
-                position.y,
-                minY,
-                maxY
-            );
+        position.x = Mathf.Clamp(position.x, -maxX, maxX);
+        position.y = Mathf.Clamp(position.y, -maxY, maxY);
 
         return position;
     }

@@ -17,15 +17,12 @@ public class DocumentFollowDesk : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (deskContent == null)
+            return;
+
         float zoom = deskContent.localScale.x;
 
-        // DeskContent의 이동 + 확대 비율 적용
-        rectTransform.anchoredPosition =
-            deskContent.anchoredPosition +
-            documentPosition * zoom;
-
-        // 서류 자체도 같은 배율로 확대
-        rectTransform.localScale =
-            Vector3.one * zoom;
+        rectTransform.anchoredPosition = deskContent.anchoredPosition + documentPosition * zoom;
+        rectTransform.localScale = Vector3.one * zoom;
     }
 }

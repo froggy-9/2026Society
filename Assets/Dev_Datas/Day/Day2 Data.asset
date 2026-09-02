@@ -12,9 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5b67d39264943c643adaa4cb7dc34409, type: 3}
   m_Name: Day2 Data
   m_EditorClassIdentifier: Assembly-CSharp::DayDataSO
-  day: 1
-  quota: 10
-  dayTime: 60
+  day: 2
+  currentDate: 
+  quota: 11
+  dayTime: 960
   news: {fileID: 11400000, guid: e240f44330e516d41a64d09bfb060245, type: 2}
   rules:
   - {fileID: 11400000, guid: 5d8048bbe9295b941880e251a3fae11b, type: 2}
+  npcs: []
+  npcTable: {fileID: 11400000, guid: aeea35ca5fa97d74f8ca367ba7b6b306, type: 2}
+  npcCount: 0
+  rejectNpcCount: 0
+  pleaNpcCount: 0
+  rejectReasons: 

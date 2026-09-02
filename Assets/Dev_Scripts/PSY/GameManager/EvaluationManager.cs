@@ -1,4 +1,15 @@
+using System.Collections.Generic;
 using UnityEngine;
+
+[System.Serializable]
+public class InspectionRecord
+{
+    public string npcName;
+    public bool playerApproved;
+    public bool shouldApprove;
+    public string reason;
+    public Sprite portrait;
+}
 
 public class EvaluationManager : MonoBehaviour
 {
@@ -10,40 +21,57 @@ public class EvaluationManager : MonoBehaviour
 
     public int CorrectCount { get; private set; }
     public int WrongCount { get; private set; }
+    public int CorrectApprovedCount { get; private set; }
+    public int CorrectDeniedCount { get; private set; }
+    public int WrongApprovedCount { get; private set; }
+    public int WrongDeniedCount { get; private set; }
 
     public int CorrectCombo { get; private set; }
     public int WrongCombo { get; private set; }
 
     public int MissedQuotaCount { get; private set; }
     public float Accuracy { get; private set; }
+    public IReadOnlyList<InspectionRecord> DayRecords => dayRecords;
 
-    /// <summary> 하루 평가 초기화 </summary>
+    private readonly List<InspectionRecord> dayRecords = new List<InspectionRecord>();
+
     public void ResetDay()
     {
         DayScore = 0;
-
         ApprovedCount = 0;
         DeniedCount = 0;
-
         CorrectCount = 0;
         WrongCount = 0;
-
+        CorrectApprovedCount = 0;
+        CorrectDeniedCount = 0;
+        WrongApprovedCount = 0;
+        WrongDeniedCount = 0;
         CorrectCombo = 0;
         WrongCombo = 0;
-
         MissedQuotaCount = 0;
         Accuracy = 0f;
+        dayRecords.Clear();
     }
 
-    /// <summary> 게임 전체 초기화 </summary>
     public void ResetGame()
     {
         TotalScore = 0;
         ResetDay();
     }
 
-    /// <summary> 심사 결과 제출 </summary>
-    public void SubmitJudgement(bool playerApproved, bool npcShouldBeApproved, bool hardPenalty)
+    public void LoadGame(int totalScore)
+    {
+        TotalScore = totalScore;
+        ResetDay();
+    }
+
+    public void SubmitJudgement(
+        bool playerApproved,
+        bool npcShouldBeApproved,
+        bool hardPenalty,
+        NPCData npc = null,
+        string reason = ""
+    )
     {
         if (playerApproved)
             ApprovedCount++;
@@ -51,27 +79,39 @@ public class EvaluationManager : MonoBehaviour
             DeniedCount++;
 
         bool isCorrect = playerApproved == npcShouldBeApproved;
-
         int score = CalculateScore(isCorrect, hardPenalty);
+
+        if (isCorrect && playerApproved)
+            CorrectApprovedCount++;
+        else if (isCorrect)
+            CorrectDeniedCount++;
+        else if (playerApproved)
+            WrongApprovedCount++;
+        else
+            WrongDeniedCount++;
 
         DayScore += score;
         TotalScore += score;
+
+        dayRecords.Add(new InspectionRecord
+        {
+            npcName = npc != null ? npc.npcName : string.Empty,
+            playerApproved = playerApproved,
+            shouldApprove = npcShouldBeApproved,
+            reason = reason,
+            portrait = npc != null ? npc.portrait : null
+        });
     }
 
-    /// <summary> 하루 종료 계산 </summary>
     public void CalculateResult(int inspectedCount, int quota)
     {
         MissedQuotaCount = Mathf.Max(0, quota - inspectedCount);
-
-        Accuracy = inspectedCount == 0
-            ? 0f
-            : (float)CorrectCount / inspectedCount;
+        Accuracy = inspectedCount == 0 ? 0f : (float)CorrectCount / inspectedCount;
     }
 
-    /// <summary> 게임오버 조건 </summary>
     public bool IsGameOver()
     {
-        return TotalScore < 0 || MissedQuotaCount > 0;
+        return TotalScore < 0;
     }
 
     private int CalculateScore(bool isCorrect, bool hardPenalty)
@@ -79,20 +119,16 @@ public class EvaluationManager : MonoBehaviour
         if (isCorrect)
         {
             CorrectCount++;
-
             CorrectCombo++;
             WrongCombo = 0;
-
             return 30 + (CorrectCombo - 1) * 10;
         }
 
         WrongCount++;
-
         WrongCombo++;
         CorrectCombo = 0;
 
         int penalty = hardPenalty ? -200 : -100;
-
         return penalty - (WrongCombo - 1) * 10;
     }
 }

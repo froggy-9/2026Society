@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class DocumentDrag : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDragHandler
+public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     [Header("UI")]
     [SerializeField] private GameObject smallPassportUI;
@@ -10,6 +10,7 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDr
 
     [Header("Desk")]
     [SerializeField] private RectTransform deskArea;
+    [SerializeField] private RectTransform deskContent;
 
     private RectTransform rectTransform;
     private Canvas canvas;
@@ -17,8 +18,8 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDr
 
     private Vector2 startPosition;
     private Vector2 smallSize;
-
-    [SerializeField] private Vector2 detailSize = new Vector2(500, 350);
+    private Vector3 startScale;
+    private Transform startParent;
 
     private void Awake()
     {
@@ -32,8 +33,9 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDr
 
         startPosition = rectTransform.anchoredPosition;
         smallSize = rectTransform.sizeDelta;
+        startScale = rectTransform.localScale;
+        startParent = transform.parent;
 
-        // 시작 상태
         smallPassportUI.SetActive(true);
         detailPassportUI.SetActive(false);
     }
@@ -41,6 +43,9 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDr
     public void OnBeginDrag(PointerEventData eventData)
     {
         canvasGroup.blocksRaycasts = false;
+
+        if (canvas != null && transform.parent == deskContent)
+            MoveToCanvas();
 
         transform.SetAsLastSibling();
     }
@@ -64,22 +69,83 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler,IDragHandler,IEndDr
 
         if (insideDesk)
         {
-            // 상세 여권으로 변경
+            MoveToDesk(eventData);
+
             smallPassportUI.SetActive(false);
             detailPassportUI.SetActive(true);
 
-            rectTransform.sizeDelta = detailSize;
+            ApplyDeskScale();
         }
         else
         {
-            // NPC 영역으로 돌아감
+            if (startParent != null && transform.parent != startParent)
+                transform.SetParent(startParent, false);
+
             smallPassportUI.SetActive(true);
             detailPassportUI.SetActive(false);
 
             rectTransform.sizeDelta = smallSize;
+            rectTransform.localScale = startScale;
 
-            // 원래 제출 위치로 복귀
             rectTransform.anchoredPosition = startPosition;
         }
+    }
+
+    private void MoveToCanvas()
+    {
+        RectTransform canvasRect = canvas.transform as RectTransform;
+
+        if (canvasRect == null)
+            return;
+
+        Camera camera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        Vector2 screenPosition = RectTransformUtility.WorldToScreenPoint(camera, rectTransform.position);
+
+        transform.SetParent(canvas.transform, false);
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPosition, camera, out Vector2 localPosition))
+            rectTransform.anchoredPosition = localPosition;
+
+        rectTransform.localScale = startScale;
+    }
+
+    private void MoveToDesk(PointerEventData eventData)
+    {
+        if (deskContent == null)
+            return;
+
+        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+            ? canvas.worldCamera
+            : null;
+
+        transform.SetParent(deskContent, false);
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(deskContent, eventData.position, camera, out Vector2 localPosition))
+            rectTransform.anchoredPosition = localPosition;
+
+        ApplyDeskScale();
+    }
+
+    private void ApplyDeskScale()
+    {
+        if (deskContent == null)
+        {
+            rectTransform.localScale = startScale;
+            return;
+        }
+
+        Vector3 parentScale = deskContent.lossyScale;
+
+        if (Mathf.Approximately(parentScale.y, 0f))
+        {
+            rectTransform.localScale = startScale;
+            return;
+        }
+
+        rectTransform.localScale = new Vector3(
+            startScale.x,
+            startScale.y * parentScale.x / parentScale.y,
+            startScale.z
+        );
     }
 }

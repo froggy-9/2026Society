@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b67d39264943c643adaa4cb7dc34409, type: 3}
+  m_Name: Day4 Data
+  m_EditorClassIdentifier: Assembly-CSharp::DayDataSO
+  day: 4
+  currentDate: 
+  quota: 13
+  dayTime: 840
+  news: {fileID: 11400000, guid: e240f44330e516d41a64d09bfb060245, type: 2}
+  rules:
+  - {fileID: 11400000, guid: 5d8048bbe9295b941880e251a3fae11b, type: 2}
+  npcs: []
+  npcTable: {fileID: 11400000, guid: aeea35ca5fa97d74f8ca367ba7b6b306, type: 2}
+  npcCount: 0
+  rejectNpcCount: 0
+  pleaNpcCount: 0
+  rejectReasons: 

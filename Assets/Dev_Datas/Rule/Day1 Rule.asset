@@ -15,3 +15,5 @@ MonoBehaviour:
   ruleID: 0
   ruleName: Check Pass
   description: Check Date
+  checkTypes: 00000000
+  checkType: 0
