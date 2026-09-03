@@ -1,55 +1,78 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class InspectionInteractionUI : MonoBehaviour
 {
     [Header("Managers")]
+    [Tooltip("현재 NPC를 관리하는 NPCManager입니다. 비워두면 씬에서 자동으로 찾습니다.")]
     [SerializeField] private NPCManager npcManager;
+
+    [Tooltip("현재 NPC의 여권/입국허가서 데이터를 가져오는 DocumentManager입니다. 비워두면 씬에서 자동으로 찾습니다.")]
     [SerializeField] private DocumentManager documentManager;
 
     [Header("NPC UI")]
+    [Tooltip("현재 NPC 사진을 표시할 UI Image입니다. 월드 스프라이트를 직접 쓰면 비워둬도 됩니다.")]
     [SerializeField] private Image npcImage;
-    [SerializeField] private TMP_Text npcNameText;
+
+    [Tooltip("현재 NPC의 한글 성명을 표시할 TMP 텍스트입니다. 화면에 안 보이면 비워둬도 됩니다.")]
+    [FormerlySerializedAs("npcNameText")]
+    [SerializeField] private TMP_Text koreanNameText;
+
+    [Header("Plea Bubble")]
+    [Tooltip("간청 이벤트 때 사연 문장을 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text dialogueText;
 
-    [Header("Speech Bubble")]
+    [Tooltip("말풍선 전체 오브젝트입니다. 간청 문장이 있을 때만 켜집니다.")]
     [SerializeField] private GameObject speechBubble;
+
+    [Tooltip("말풍선 배경 Image의 RectTransform입니다. 글자 길이에 맞춰 크기가 변합니다.")]
     [SerializeField] private RectTransform speechBubbleRect;
+
+    [Tooltip("말풍선 안쪽 여백입니다.")]
     [SerializeField] private Vector2 speechPadding = new Vector2(60f, 40f);
+
+    [Tooltip("말풍선 최소 크기입니다.")]
     [SerializeField] private Vector2 speechMinSize = new Vector2(360f, 110f);
+
+    [Tooltip("말풍선 최대 크기입니다.")]
     [SerializeField] private Vector2 speechMaxSize = new Vector2(800f, 260f);
 
     [Header("Documents")]
+    [Tooltip("여권 버튼입니다. 현재 NPC가 여권을 가지고 있으면 켜집니다.")]
     [SerializeField] private Button passportButton;
+
+    [Tooltip("입국허가서 버튼입니다. 현재 NPC가 입국허가서를 가지고 있으면 켜집니다.")]
     [SerializeField] private Button entryPermitButton;
+
+    [Tooltip("여권을 펼쳐서 보여줄 DocumentViewUI입니다.")]
     [SerializeField] private DocumentViewUI passportView;
+
+    [Tooltip("입국허가서를 펼쳐서 보여줄 DocumentViewUI입니다.")]
     [SerializeField] private DocumentViewUI entryPermitView;
 
-    [Header("Questions")]
-    [SerializeField] private GameObject questionPanel;
-    [SerializeField] private Button[] questionButtons;
-    [SerializeField] private TMP_Text[] questionLabels;
-
     [Header("Judgement")]
+    [Tooltip("입국 허가 버튼입니다.")]
     [SerializeField] private Button approveButton;
+
+    [Tooltip("입국 불허가 버튼입니다.")]
     [SerializeField] private Button rejectButton;
+
+    [Tooltip("간청 중 승인 버튼을 강조할 Graphic입니다. 버튼 텍스트나 테두리 이미지를 넣으면 됩니다.")]
     [SerializeField] private Graphic approveHighlight;
 
     private NPCController shownNpc;
-    private bool checkedAnyDocument;
     private bool waitingForPleaDecision;
-    private bool firstLineShown;
-    private bool[] usedQuestions;
     private InspectionDecision currentDecision;
 
     private void Awake()
     {
         if (npcManager == null)
-            npcManager = FindObjectOfType<NPCManager>();
+            npcManager = FindFirstObjectByType<NPCManager>();
 
         if (documentManager == null)
-            documentManager = FindObjectOfType<DocumentManager>();
+            documentManager = FindFirstObjectByType<DocumentManager>();
     }
 
     private void OnEnable()
@@ -78,7 +101,6 @@ public class InspectionInteractionUI : MonoBehaviour
         if (shownNpc == null || !shownNpc.IsReady)
             return;
 
-        MarkDocumentChecked();
         passportView?.Show(documentManager != null ? documentManager.GetPassport() : null);
     }
 
@@ -87,14 +109,11 @@ public class InspectionInteractionUI : MonoBehaviour
         if (shownNpc == null || !shownNpc.IsReady)
             return;
 
-        MarkDocumentChecked();
         entryPermitView?.Show(documentManager != null ? documentManager.GetEntryPermit() : null);
     }
 
     public void MarkDocumentChecked()
     {
-        checkedAnyDocument = true;
-        RefreshQuestions();
     }
 
     public void Approve()
@@ -113,7 +132,7 @@ public class InspectionInteractionUI : MonoBehaviour
         if (!waitingForPleaDecision && ShouldStartPlea())
         {
             waitingForPleaDecision = true;
-            ShowDialogue(shownNpc.Case.pleaText);
+            ShowDialogue(shownNpc.Data.pleaText);
             SetApproveHighlight(true);
             return;
         }
@@ -132,8 +151,8 @@ public class InspectionInteractionUI : MonoBehaviour
             shownNpc.Data,
             currentDecision.reason
         );
-        npcManager.CompleteCurrentNPC(approved);
 
+        npcManager.CompleteCurrentNPC(approved);
         StorePleaNews(approved);
         ResetNpcUiState();
     }
@@ -164,21 +183,9 @@ public class InspectionInteractionUI : MonoBehaviour
         );
 
         SetNpcVisible(true);
-        SetText(npcNameText, shownNpc.Data != null ? shownNpc.Data.npcName : string.Empty);
+        SetText(koreanNameText, shownNpc.Data != null ? shownNpc.Data.koreanName : string.Empty);
         SetDocumentButtons();
-
-        if (npcImage != null)
-        {
-            npcImage.sprite = shownNpc.Data != null ? shownNpc.Data.portrait : null;
-            npcImage.enabled = visibleNpcImageExists();
-        }
-
-        if (shownNpc.IsReady)
-            ShowFirstLine();
-        else
-            ShowDialogue(string.Empty);
-
-        RefreshQuestions();
+        ShowDialogue(string.Empty);
     }
 
     private void OnShownNpcArrived(NPCController npc)
@@ -186,161 +193,32 @@ public class InspectionInteractionUI : MonoBehaviour
         if (npc != shownNpc)
             return;
 
-        ShowFirstLine();
-        RefreshQuestions();
-    }
-
-    private void ShowFirstLine()
-    {
-        if (firstLineShown)
-            return;
-
-        firstLineShown = true;
-
-        string firstLine = shownNpc?.Dialogue != null ? shownNpc.Dialogue.firstLine : string.Empty;
-        ShowDialogue(firstLine);
-    }
-
-    private void RefreshQuestions()
-    {
-        NpcQuestion[] questions = GetQuestions();
-        bool shouldShow = checkedAnyDocument
-            && shownNpc != null
-            && shownNpc.IsReady
-            && questions != null
-            && questions.Length > 0
-            && !AllQuestionsUsed(questions.Length);
-
-        if (questionPanel != null)
-            questionPanel.SetActive(shouldShow);
-
-        EnsureQuestionState(questions);
-
-        if (questionButtons == null)
-            return;
-
-        for (int i = 0; i < questionButtons.Length; i++)
-        {
-            bool hasQuestion = shouldShow
-                && i < questions.Length
-                && usedQuestions != null
-                && !usedQuestions[i];
-
-            if (questionButtons[i] != null)
-            {
-                int index = i;
-                questionButtons[i].gameObject.SetActive(hasQuestion);
-                questionButtons[i].interactable = hasQuestion;
-                questionButtons[i].onClick.RemoveAllListeners();
-
-                if (hasQuestion)
-                    questionButtons[i].onClick.AddListener(() => AskQuestion(index));
-            }
-
-            if (questionLabels != null && i < questionLabels.Length && questionLabels[i] != null)
-                questionLabels[i].text = hasQuestion ? questions[i].question : string.Empty;
-        }
-    }
-
-    private void AskQuestion(int index)
-    {
-        NpcQuestion[] questions = GetQuestions();
-
-        if (questions == null || index < 0 || index >= questions.Length)
-            return;
-
-        EnsureQuestionState(questions);
-        usedQuestions[index] = true;
-        ShowDialogue(questions[index].answer);
-        RefreshQuestions();
-    }
-
-    private NpcQuestion[] GetQuestions()
-    {
-        NpcCase npcCase = shownNpc?.Case;
-
-        if (npcCase == null)
-            return null;
-
-        if (npcCase.questions != null && npcCase.questions.Length > 0)
-            return npcCase.questions;
-
-        PlayerQuestion[] dialogueQuestions = npcCase.dialogue != null ? npcCase.dialogue.questions : null;
-
-        if (dialogueQuestions == null || dialogueQuestions.Length == 0)
-            return null;
-
-        NpcQuestion[] converted = new NpcQuestion[dialogueQuestions.Length];
-        for (int i = 0; i < dialogueQuestions.Length; i++)
-        {
-            converted[i] = new NpcQuestion
-            {
-                question = dialogueQuestions[i].question,
-                answer = dialogueQuestions[i].answer
-            };
-        }
-
-        return converted;
-    }
-
-    private void EnsureQuestionState(NpcQuestion[] questions)
-    {
-        int length = questions != null ? questions.Length : 0;
-
-        if (usedQuestions == null || usedQuestions.Length != length)
-            usedQuestions = new bool[length];
-    }
-
-    private bool AllQuestionsUsed(int questionCount)
-    {
-        if (questionCount <= 0)
-            return true;
-
-        if (usedQuestions == null || usedQuestions.Length != questionCount)
-            return false;
-
-        for (int i = 0; i < usedQuestions.Length; i++)
-        {
-            if (!usedQuestions[i])
-                return false;
-        }
-
-        return true;
+        ShowDialogue(string.Empty);
     }
 
     private bool ShouldStartPlea()
     {
-        NpcCase npcCase = shownNpc?.Case;
-
-        if (npcCase == null || !npcCase.canPlead)
-            return false;
-
-        return Random.value <= npcCase.pleaChance;
+        return shownNpc != null && shownNpc.Data != null && shownNpc.Data.canPlead;
     }
 
     private void StorePleaNews(bool approved)
     {
-        if (!waitingForPleaDecision || shownNpc?.Case == null)
+        if (!waitingForPleaDecision || shownNpc?.Data == null)
             return;
 
         PleaResultLog.Add(approved
-            ? shownNpc.Case.approveNews
-            : shownNpc.Case.rejectNews
+            ? shownNpc.Data.approvedFollowUpNews
+            : shownNpc.Data.rejectedFollowUpNews
         );
     }
 
     private void ResetNpcUiState()
     {
-        checkedAnyDocument = false;
         waitingForPleaDecision = false;
-        firstLineShown = false;
-        usedQuestions = null;
         currentDecision = default;
         SetApproveHighlight(false);
-        questionPanel?.SetActive(false);
         passportView?.Close();
         entryPermitView?.Close();
-        HideQuestions();
     }
 
     private void AddListeners()
@@ -365,21 +243,6 @@ public class InspectionInteractionUI : MonoBehaviour
             shownNpc.Arrived -= OnShownNpcArrived;
     }
 
-    private void HideQuestions()
-    {
-        if (questionButtons == null)
-            return;
-
-        for (int i = 0; i < questionButtons.Length; i++)
-        {
-            if (questionButtons[i] != null)
-                questionButtons[i].gameObject.SetActive(false);
-
-            if (questionLabels != null && i < questionLabels.Length && questionLabels[i] != null)
-                questionLabels[i].text = string.Empty;
-        }
-    }
-
     private void SetApproveHighlight(bool active)
     {
         if (approveHighlight != null)
@@ -389,14 +252,14 @@ public class InspectionInteractionUI : MonoBehaviour
     private void SetNpcVisible(bool visible)
     {
         if (npcImage != null)
-            npcImage.enabled = visible && npcImage.sprite != null;
+        {
+            npcImage.sprite = visible && shownNpc != null && shownNpc.Data != null ? shownNpc.Data.portrait : null;
+            npcImage.enabled = npcImage.sprite != null;
+        }
 
         if (!visible)
         {
-            if (npcImage != null)
-                npcImage.sprite = null;
-
-            SetText(npcNameText, string.Empty);
+            SetText(koreanNameText, string.Empty);
             ShowDialogue(string.Empty);
         }
     }
@@ -442,11 +305,6 @@ public class InspectionInteractionUI : MonoBehaviour
         float width = Mathf.Clamp(preferred.x + speechPadding.x, speechMinSize.x, speechMaxSize.x);
         float height = Mathf.Clamp(preferred.y + speechPadding.y, speechMinSize.y, speechMaxSize.y);
         bubbleRect.sizeDelta = new Vector2(width, height);
-    }
-
-    private bool visibleNpcImageExists()
-    {
-        return npcImage != null && npcImage.sprite != null;
     }
 
     private static void SetText(TMP_Text text, string value)

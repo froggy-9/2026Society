@@ -6,36 +6,62 @@ using UnityEngine.UI;
 public class RefugeesGameUI : MonoBehaviour
 {
     [Header("Panels")]
+    [Tooltip("뉴스 화면 전체 패널입니다. 뉴스/규칙 UI가 들어있는 Canvas 또는 Panel을 넣습니다.")]
     [SerializeField] private GameObject newsPanel;
+
+    [Tooltip("심사 화면 전체 패널입니다.")]
     [SerializeField] private GameObject inspectionPanel;
+
+    [Tooltip("하루 결과 화면 전체 패널입니다.")]
     [SerializeField] private GameObject resultPanel;
+
+    [Tooltip("게임오버 화면 전체 패널입니다.")]
     [SerializeField] private GameObject gameOverPanel;
 
     [Header("News UI")]
+    [Tooltip("뉴스 제목/본문/이미지 슬롯을 제어하는 NewsViewUI입니다.")]
     [SerializeField] private NewsViewUI newsView;
+
+    [Tooltip("근무 규칙 제목/본문을 제어하는 RuleListUI입니다.")]
     [SerializeField] private RuleListUI ruleListView;
+
+    [Tooltip("뉴스 화면에서 심사 화면으로 넘어가는 버튼입니다. Enter 키도 지원합니다.")]
     [SerializeField] private Button newsContinueButton;
 
     [Header("Inspection HUD")]
+    [Tooltip("현재 일차를 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text dayText;
+
+    [Tooltip("남은 제한시간을 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text timerText;
+
+    [Tooltip("현재 심사 수 / 목표 심사 수를 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text quotaText;
+
+    [Tooltip("현재 점수를 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text scoreText;
 
     [Header("Result")]
+    [Tooltip("하루 결과 요약을 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text resultSummaryText;
+
+    [Tooltip("다음 날로 넘어가는 버튼입니다.")]
     [SerializeField] private Button nextDayButton;
+
+    [Tooltip("게임을 처음부터 다시 시작하는 버튼입니다.")]
     [SerializeField] private Button restartButton;
 
     private RefugeesGameManager gameManager;
 
     private void Awake()
     {
+        ResolveSceneReferences();
         RegisterGameManager();
     }
 
     private void OnEnable()
     {
+        ResolveSceneReferences();
         RegisterGameManager();
 
         if (gameManager != null)
@@ -46,6 +72,9 @@ public class RefugeesGameUI : MonoBehaviour
 
         if (newsContinueButton != null)
             newsContinueButton.onClick.AddListener(ContinueFromNews);
+
+        if (newsView != null)
+            newsView.ContinueRequested += ContinueFromNews;
 
         if (nextDayButton != null)
             nextDayButton.onClick.AddListener(NextDay);
@@ -62,6 +91,9 @@ public class RefugeesGameUI : MonoBehaviour
         if (newsContinueButton != null)
             newsContinueButton.onClick.RemoveListener(ContinueFromNews);
 
+        if (newsView != null)
+            newsView.ContinueRequested -= ContinueFromNews;
+
         if (nextDayButton != null)
             nextDayButton.onClick.RemoveListener(NextDay);
 
@@ -71,6 +103,7 @@ public class RefugeesGameUI : MonoBehaviour
 
     private void Start()
     {
+        ResolveSceneReferences();
         RegisterGameManager();
 
         if (gameManager != null && gameManager.CurrentState == GameState.None)
@@ -213,5 +246,14 @@ public class RefugeesGameUI : MonoBehaviour
 
         gameManager = nextManager;
         gameManager.StateChanged += RefreshState;
+    }
+
+    private void ResolveSceneReferences()
+    {
+        if (newsView == null)
+            newsView = GetComponent<NewsViewUI>();
+
+        if (ruleListView == null)
+            ruleListView = GetComponent<RuleListUI>();
     }
 }

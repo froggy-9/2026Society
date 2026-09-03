@@ -12,12 +12,67 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 760e0fc9e76df2b48a46f8dbe79dcbc9, type: 3}
   m_Name: NpcTable
   m_EditorClassIdentifier: Assembly-CSharp::NpcTableSO
-  names: []
+  namePairs:
+  - koreanName: "\uC0CC\uB354\uC2A4"
+    englishSurname: 
+    englishGivenNames: 
+  koreanNames:
+  - "\uC0CC\uB354\uC2A4"
+  englishSurnames:
+  - 
+  englishGivenNames:
+  - 
   genders: 0000000001000000
+  ages: 
   minAge: 18
   maxAge: 70
-  jobs: []
-  addresses: []
-  familyRelationships: []
-  portraits: []
-  pleaStories: []
+  birthDates:
+  - 2035-04-28
+  nationalities:
+  - Korea
+  jobs:
+  - Doctor
+  addresses:
+  - "\uB9AC\uBE44\uC544 \uC6B0\uBC14\uB9AC"
+  familyRelationships:
+  - 
+  passportNumbers:
+  - 
+  passportIssueDates:
+  - 
+  passportExpiryDates:
+  - 
+  expiredPassportExpiryDates:
+  - 
+  issuingAuthorities:
+  - 
+  photoPairs:
+  - npcPhoto: {fileID: 21300000, guid: a07e57b231ec91744aede1e8f62a881c, type: 3}
+    passportPhoto: {fileID: 21300000, guid: 52d36fe271f2fb842bf4ac07268787b9, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: 20e13d09a0b9db64682dba9f02641966, type: 3}
+    passportPhoto: {fileID: 21300000, guid: 7b379ed25a4a04d45a009b561fdaaf55, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: c63695561c9b991429be778974ff2b14, type: 3}
+    passportPhoto: {fileID: 21300000, guid: 533a5baff5ec4954f97f45e40d429dc3, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: 21b6de9c8ea37d049a6d9adf29c2ef90, type: 3}
+    passportPhoto: {fileID: 21300000, guid: e957ce43304fb8647a193b30127abb62, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: 8298606e4dd32c94d8c03ae81ebed43c, type: 3}
+    passportPhoto: {fileID: 21300000, guid: ecad4e52f6272ea49ad03da8a2073e01, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: 4534213365f17c54ab08ac8ea448e526, type: 3}
+    passportPhoto: {fileID: 21300000, guid: 9c481e15b91e0c24d8c01faf6342c6ac, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: 8a233deb38bd12743b4a1a4ed16a8ce5, type: 3}
+    passportPhoto: {fileID: 21300000, guid: 845d8075fc973f04bb7f41295140b4a4, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: 1971db73e400c864680fa3c215c01595, type: 3}
+    passportPhoto: {fileID: 21300000, guid: cc49e82d75567eb47bb53b34009475ec, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: 6a3fcd469d5826447a6726c132b05832, type: 3}
+    passportPhoto: {fileID: 21300000, guid: 25679bd947e11634e8f7f63bd173ab58, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: ee2ea55a56f3b5c409e7d11989495633, type: 3}
+    passportPhoto: {fileID: 21300000, guid: 65d11f3b703b8214c9f141c1cf0ed7d4, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: c08f3a95735658d49acb4f34008d2285, type: 3}
+    passportPhoto: {fileID: 21300000, guid: e634d3cf5cb2fb9409fbdbcb54058824, type: 3}
+  - npcPhoto: {fileID: 21300000, guid: 2d33e1fc292ac3c4287322db72c04b6a, type: 3}
+    passportPhoto: {fileID: 21300000, guid: 85737c10fb0463444be5bd4b98f01b44, type: 3}
+  pleaStories:
+  - storyName: 
+    pleaText: 
+    approvedFollowUpNews: 
+    rejectedFollowUpNews: 

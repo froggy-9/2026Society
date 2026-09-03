@@ -46,9 +46,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCController
   npcData: {fileID: 0}
+  npcLook: {fileID: 5599166247326329470}
   moveSpeed: 2
   visualRoot: {fileID: 8770688919325579971}
-  flipByMoveDirection: 0
   walkBobHeight: 0.04
   walkBobSpeed: 8
 --- !u!1 &5975505664893411468
@@ -155,6 +155,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e26acc7a2d46bd469a84f7d24b92a52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NpcLook
-  photos: {fileID: 0}
-  photoRenderer: {fileID: 0}
-  randomOnStart: 0
+  photoRenderer: {fileID: 7465661088504155467}

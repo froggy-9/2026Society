@@ -6,7 +6,7 @@ public class NPCController : MonoBehaviour
     public event System.Action<NPCController> Exited;
 
     [HideInInspector]
-    [SerializeField] private NpcCase npcCase;
+    [SerializeField] private NPCData npcData;
 
     [Header("Look")]
     [SerializeField] private NpcLook npcLook;
@@ -25,19 +25,17 @@ public class NPCController : MonoBehaviour
     private bool hasMoveTarget;
     private bool isLeaving;
 
-    public NpcCase Case => npcCase;
-    public NPCData Data => npcCase != null ? npcCase.npc : null;
-    public NpcDialogue Dialogue => npcCase != null ? npcCase.dialogue : null;
+    public NPCData Data => npcData;
     public bool IsReady { get; private set; }
 
     public void Initialize(
-        NpcCase npcCase,
+        NPCData npcData,
         Transform waitPoint,
         Transform approveExitPoint,
         Transform rejectExitPoint
     )
     {
-        this.npcCase = npcCase;
+        this.npcData = npcData;
         this.waitPoint = waitPoint;
         this.approveExitPoint = approveExitPoint;
         this.rejectExitPoint = rejectExitPoint;
@@ -52,10 +50,7 @@ public class NPCController : MonoBehaviour
         IsReady = false;
         isLeaving = false;
 
-        if (Data != null && Data.portrait != null)
-            npcLook?.SetPhoto(Data.portrait);
-        else
-            npcLook?.PickRandomPhoto();
+        npcLook?.SetPhoto(Data != null ? Data.portrait : null);
 
         if (waitPoint != null)
             MoveTo(waitPoint.position);

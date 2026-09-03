@@ -8,7 +8,7 @@ public class DocumentManager : MonoBehaviour
     private void Awake()
     {
         if (npcManager == null)
-            npcManager = FindObjectOfType<NPCManager>();
+            npcManager = FindFirstObjectByType<NPCManager>();
     }
 
     private NPCData CurrentNPC

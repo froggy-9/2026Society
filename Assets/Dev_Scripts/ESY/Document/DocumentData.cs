@@ -6,16 +6,21 @@ public enum DocumentType
     EntryPermit
 }
 
-public class DocumentData : ScriptableObject
+[System.Serializable]
+public class DocumentData
 {
     [Header("Document")]
     public DocumentType documentType;
 
     [Header("Person")]
-    public string npcName;
+    public string koreanName;
+    public string englishSurname;
+    public string englishGivenNames;
     public Gender gender;
     public int age;
     public Sprite portrait;
+    public string nationality;
+    public string dateOfBirth;
 
     [Header("Profile")]
     public string occupation;
@@ -34,6 +39,9 @@ public class DocumentData : ScriptableObject
     public string psychiatricHistory;
 
     [Header("Passport")]
+    public string issueDate;
+    public string issuingAuthority;
+
     [Tooltip("Format: yyyy-MM-dd")]
     public string passportExpiryDate;
 }

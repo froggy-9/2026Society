@@ -4,13 +4,13 @@ using UnityEngine;
 public class DayManager : MonoBehaviour
 {
     [SerializeField] private List<DayDataSO> dayDatas;
-    private readonly List<RuleSO> currentRules = new List<RuleSO>();
+    private readonly List<RuleSO> currentDayRules = new List<RuleSO>();
 
     public DayDataSO CurrentDayData { get; private set; }
 
     public NewsSO CurrentNews => CurrentDayData != null ? CurrentDayData.news : null;
 
-    public List<RuleSO> CurrentRules => currentRules;
+    public List<RuleSO> CurrentRules => currentDayRules;
 
     public RuleSO TodayRule => CurrentDayData != null ? CurrentDayData.rule : null;
 
@@ -32,26 +32,17 @@ public class DayManager : MonoBehaviour
             return false;
         }
 
-        RebuildRules(day);
+        LoadCurrentDayRules();
         return true;
     }
 
-    private void RebuildRules(int day)
+    private void LoadCurrentDayRules()
     {
-        currentRules.Clear();
+        currentDayRules.Clear();
 
-        if (dayDatas == null)
+        if (CurrentDayData == null || CurrentDayData.rule == null)
             return;
 
-        for (int i = 0; i < dayDatas.Count; i++)
-        {
-            DayDataSO dayData = dayDatas[i];
-
-            if (dayData == null || dayData.day > day || dayData.rule == null)
-                continue;
-
-            if (!currentRules.Contains(dayData.rule))
-                currentRules.Add(dayData.rule);
-        }
+        currentDayRules.Add(CurrentDayData.rule);
     }
 }

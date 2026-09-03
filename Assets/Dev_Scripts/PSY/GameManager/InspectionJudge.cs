@@ -60,7 +60,9 @@ public static class InspectionJudge
                 return passport != null && npc.portrait == passport.portrait;
 
             case RuleCheckType.NameMatch:
-                return TextMatches(npc.npcName, passport?.npcName, permit?.npcName);
+                return TextMatches(npc.koreanName, passport?.koreanName, permit?.koreanName)
+                    && TextMatches(npc.englishSurname, passport?.englishSurname)
+                    && TextMatches(npc.englishGivenNames, passport?.englishGivenNames);
 
             case RuleCheckType.GenderMatch:
                 return EnumMatches(npc.gender, passport?.gender, permit?.gender);

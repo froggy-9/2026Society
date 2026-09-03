@@ -16,7 +16,7 @@ public class NPCManager : MonoBehaviour
     [FormerlySerializedAs("nextSpawnDelay")]
     [SerializeField] private Vector2 nextNpcWaitRange = new Vector2(1f, 3f);
 
-    private readonly List<NpcCase> remainingNpcs = new List<NpcCase>();
+    private readonly List<NPCData> remainingNpcs = new List<NPCData>();
 
     private Coroutine spawnRoutine;
     private NPCController currentNPC;
@@ -26,7 +26,7 @@ public class NPCManager : MonoBehaviour
     private void OnEnable()
     {
         if (spawner == null)
-            spawner = FindObjectOfType<NPCSpawner>();
+            spawner = FindFirstObjectByType<NPCSpawner>();
 
         RegisterGameManager();
     }
@@ -56,9 +56,9 @@ public class NPCManager : MonoBehaviour
             return;
         }
 
-        NpcCase npcCase = TakeRandomNpc();
+        NPCData npcData = TakeRandomNpc();
 
-        if (npcCase == null)
+        if (npcData == null)
         {
             Debug.Log("No NPC remains for this day.");
             return;
@@ -70,13 +70,13 @@ public class NPCManager : MonoBehaviour
             return;
         }
 
-        currentNPC = spawner.SpawnNPC(npcCase);
+        currentNPC = spawner.SpawnNPC(npcData);
 
         if (currentNPC == null)
             return;
 
         currentNPC.Exited += OnNPCExited;
-        Debug.Log($"NPC spawned: {currentNPC.Data.npcName}");
+        Debug.Log($"NPC spawned: {currentNPC.Data.koreanName}");
     }
 
     public void CompleteCurrentNPC(bool approved)
@@ -114,9 +114,6 @@ public class NPCManager : MonoBehaviour
 
         remainingNpcs.Clear();
 
-        if (dayData?.npcs != null)
-            remainingNpcs.AddRange(dayData.npcs);
-
         if (dayData?.npcTable != null)
         {
             if (day <= 1)
@@ -137,7 +134,7 @@ public class NPCManager : MonoBehaviour
                     ? dayData.npcTable.PickFailReason(dayData.rejectReasons)
                     : NpcFailReason.None;
 
-                remainingNpcs.Add(dayData.npcTable.CreateRandomCase(
+                remainingNpcs.Add(dayData.npcTable.CreateRandomNpc(
                     dayData.currentDate,
                     pleaIndexes.Contains(i),
                     failReason
@@ -212,15 +209,15 @@ public class NPCManager : MonoBehaviour
         currentNPC = null;
     }
 
-    private NpcCase TakeRandomNpc()
+    private NPCData TakeRandomNpc()
     {
         if (remainingNpcs.Count == 0)
             return null;
 
         int index = Random.Range(0, remainingNpcs.Count);
-        NpcCase npcCase = remainingNpcs[index];
+        NPCData npcData = remainingNpcs[index];
         remainingNpcs.RemoveAt(index);
-        return npcCase;
+        return npcData;
     }
 
     private void RegisterGameManager()

@@ -14,12 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DayDataSO
   day: 3
   currentDate: 
-  quota: 12
+  targetInspectionCount: 12
   dayTime: 900
   news: {fileID: 11400000, guid: e240f44330e516d41a64d09bfb060245, type: 2}
-  rules:
-  - {fileID: 11400000, guid: 5d8048bbe9295b941880e251a3fae11b, type: 2}
-  npcs: []
+  ruleDescription: 
+  rule: {fileID: 11400000, guid: 559423897aa64604da011ddf6bf34eb7, type: 2}
   npcTable: {fileID: 11400000, guid: aeea35ca5fa97d74f8ca367ba7b6b306, type: 2}
   npcCount: 0
   rejectNpcCount: 0

@@ -4,7 +4,7 @@ using UnityEngine;
 [System.Serializable]
 public class InspectionRecord
 {
-    public string npcName;
+    public string koreanName;
     public bool playerApproved;
     public bool shouldApprove;
     public string reason;
@@ -95,7 +95,7 @@ public class EvaluationManager : MonoBehaviour
 
         dayRecords.Add(new InspectionRecord
         {
-            npcName = npc != null ? npc.npcName : string.Empty,
+            koreanName = npc != null ? npc.koreanName : string.Empty,
             playerApproved = playerApproved,
             shouldApprove = npcShouldBeApproved,
             reason = reason,

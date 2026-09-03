@@ -6,13 +6,18 @@ public enum Gender
     Female
 }
 
-public class NPCData : ScriptableObject
+[System.Serializable]
+public class NPCData
 {
     [Header("Person")]
-    public string npcName;
+    public string koreanName;
+    public string englishSurname;
+    public string englishGivenNames;
     public Gender gender;
     public int age;
     public Sprite portrait;
+    public string nationality;
+    public string dateOfBirth;
 
     [Header("Profile")]
     public string job;
@@ -33,4 +38,16 @@ public class NPCData : ScriptableObject
     [Header("Documents")]
     public DocumentData passport;
     public DocumentData entryPermit;
+
+    [Header("Plea")]
+    public bool canPlead;
+
+    [TextArea(2, 5)]
+    public string pleaText;
+
+    [TextArea(2, 5)]
+    public string approvedFollowUpNews;
+
+    [TextArea(2, 5)]
+    public string rejectedFollowUpNews;
 }

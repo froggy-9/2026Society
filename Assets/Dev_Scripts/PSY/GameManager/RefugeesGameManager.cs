@@ -36,10 +36,10 @@ public class RefugeesGameManager : MonoBehaviour
         }
 
         if (dayManager == null)
-            dayManager = FindObjectOfType<DayManager>();
+            dayManager = FindFirstObjectByType<DayManager>();
 
         if (evaluationManager == null)
-            evaluationManager = FindObjectOfType<EvaluationManager>();
+            evaluationManager = FindFirstObjectByType<EvaluationManager>();
     }
 
     private void Update()
@@ -65,13 +65,11 @@ public class RefugeesGameManager : MonoBehaviour
 
         if (canContinue)
         {
-            NpcLook.LoadUsedPhotos();
             evaluationManager?.LoadGame(SaveCardMenu.GetSavedScore(slot));
             CurrentDay = SaveCardMenu.GetSavedDay(slot);
         }
         else
         {
-            NpcLook.ResetUsedPhotos();
             evaluationManager?.ResetGame();
             CurrentDay = 1;
         }

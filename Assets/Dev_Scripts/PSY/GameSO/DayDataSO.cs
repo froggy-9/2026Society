@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -9,6 +8,7 @@ using UnityEngine.Serialization;
 public class DayDataSO : ScriptableObject
 {
     [Header("Day")]
+    [Tooltip("몇 일차 데이터인지 적습니다. RefugeesGameManager의 CurrentDay와 같은 값을 찾습니다.")]
     public int day;
 
     [Tooltip("Format: yyyy-MM-dd")]
@@ -17,25 +17,25 @@ public class DayDataSO : ScriptableObject
     [FormerlySerializedAs("quota")]
     [Tooltip("하루 결과 평가용 목표 심사 수입니다. 하루 종료 조건은 dayTime입니다.")]
     public int targetInspectionCount;
+
+    [Tooltip("이 하루의 실제 플레이 제한시간입니다. 초 단위입니다.")]
     public float dayTime = 180f;
 
     [Header("Content")]
+    [Tooltip("이 날짜 시작 전에 보여줄 뉴스 SO입니다.")]
     public NewsSO news;
 
     [Header("Rule Description")]
     [FormerlySerializedAs("ruleNotice")]
     [TextArea(2, 5)]
+    [Tooltip("규칙서 본문 위에 추가로 보여줄 그날 안내 문장입니다. 필요 없으면 비워둡니다.")]
     public string ruleDescription;
 
-    [Tooltip("오늘 새로 추가되는 규칙입니다. 이전 일차 규칙은 자동으로 유지됩니다.")]
+    [Tooltip("이 날짜에 사용할 규칙 SO입니다. 화면에는 RuleSO.description이 나오고, 판정에는 RuleSO.checkTypes가 쓰입니다.")]
     public RuleSO rule;
 
-    [Header("NPC Cases")]
-    [FormerlySerializedAs("inspectionProfiles")]
-    [HideInInspector]
-    public List<NpcCase> npcs;
-
     [Header("Random NPC")]
+    [Tooltip("이 날짜에 사용할 NPC 랜덤 재료표입니다.")]
     public NpcTableSO npcTable;
 
     [FormerlySerializedAs("randomNpcCount")]
