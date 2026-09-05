@@ -39,6 +39,15 @@ public class NPCData
     public DocumentData passport;
     public DocumentData entryPermit;
 
+    [Header("Manual Decision")]
+    public bool useManualDecision;
+    public bool manualShouldApprove = true;
+    public string manualDecisionReason;
+
+    [Header("Dialogue")]
+    [TextArea(2, 5)]
+    public string[] dialogueLines;
+
     [Header("Plea")]
     public bool canPlead;
 

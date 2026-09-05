@@ -19,6 +19,9 @@ public class NPCSpawner : MonoBehaviour
     [Tooltip("거절된 NPC가 화면 밖 왼쪽으로 되돌아가는 위치입니다.")]
     [SerializeField] private Transform rejectExitPoint;
 
+    [Tooltip("생성된 NPC를 담을 부모입니다. NpcPoints처럼 이동 포인트들과 같은 부모를 넣습니다.")]
+    [SerializeField] private Transform npcParent;
+
     public NPCController SpawnNPC(NPCData npcData)
     {
         if (npcData == null)
@@ -39,11 +42,33 @@ public class NPCSpawner : MonoBehaviour
             return null;
         }
 
-        NPCController newNPC = Instantiate(
-            npcPrefab,
-            spawnPoint.position,
-            spawnPoint.rotation
-        );
+        if (waitPoint == null)
+        {
+            Debug.LogError("Wait Point is missing.");
+            return null;
+        }
+
+        if (approveExitPoint == null)
+        {
+            Debug.LogError("Approve Exit Point is missing.");
+            return null;
+        }
+
+        if (rejectExitPoint == null)
+        {
+            Debug.LogError("Reject Exit Point is missing.");
+            return null;
+        }
+
+        if (npcParent == null)
+        {
+            Debug.LogError("NPC Parent is missing.");
+            return null;
+        }
+
+        NPCController newNPC = Instantiate(npcPrefab, npcParent);
+        newNPC.transform.localPosition = spawnPoint.localPosition;
+        newNPC.transform.localRotation = spawnPoint.localRotation;
 
         newNPC.Initialize(
             npcData,

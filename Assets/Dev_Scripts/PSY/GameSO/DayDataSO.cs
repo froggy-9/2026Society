@@ -45,9 +45,10 @@ public class DayDataSO : ScriptableObject
     [Tooltip("오늘 정답이 불허가인 NPC 수입니다.")]
     public int rejectNpcCount;
 
-    [Tooltip("오늘 등장할 간청 NPC 수입니다.")]
-    public int pleaNpcCount;
-
     [Tooltip("불허가 NPC를 만들 때 사용할 사유입니다. 비워두면 기본 사유에서 랜덤 선택합니다.")]
     public NpcFailReason[] rejectReasons;
+
+    [Header("Special NPC")]
+    [Tooltip("특수 NPC 목록입니다. 각 SO의 등장 일차에 현재 일차가 들어 있으면 오늘 목록에 섞입니다.")]
+    public SpecialNpcSO[] specialNpcs;
 }

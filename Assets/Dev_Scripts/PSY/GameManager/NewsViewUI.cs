@@ -1,7 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
@@ -46,6 +48,13 @@ public class NewsViewUI : MonoBehaviour
     [Tooltip("다음 뉴스 페이지 버튼들입니다. 마지막 페이지에서는 심사 화면으로 넘어갑니다.")]
     [SerializeField] private Button[] nextPageButtons;
 
+    [Header("Page Motion")]
+    [Tooltip("뉴스 페이지가 바뀔 때 아래에서 올라오는 거리입니다.")]
+    [SerializeField] private Vector2 pageStartOffset = new Vector2(0f, -28f);
+
+    [Tooltip("뉴스 페이지가 서서히 나타나는 시간입니다.")]
+    [SerializeField] private float pageFadeDuration = 0.6f;
+
     [HideInInspector]
     [SerializeField] private Button previousPageButton;
 
@@ -87,6 +96,8 @@ public class NewsViewUI : MonoBehaviour
     private string currentBody;
     private Sprite[] currentImages = System.Array.Empty<Sprite>();
     private int currentPageIndex;
+    private readonly Dictionary<RectTransform, Vector2> pageBasePositions = new Dictionary<RectTransform, Vector2>();
+    private Coroutine pageMotionRoutine;
 
     private void OnEnable()
     {
@@ -97,6 +108,17 @@ public class NewsViewUI : MonoBehaviour
     private void OnDisable()
     {
         RemoveListeners();
+
+        if (pageMotionRoutine != null)
+        {
+            StopCoroutine(pageMotionRoutine);
+            pageMotionRoutine = null;
+        }
+    }
+
+    private void Update()
+    {
+        HandlePageButtonPointerFallback();
     }
 
     public void Show(NewsSO news, IEnumerable<string> extraNews = null)
@@ -267,6 +289,8 @@ public class NewsViewUI : MonoBehaviour
                 if (pages[i]?.pageRoot != null)
                     pages[i].pageRoot.SetActive(i == currentPageIndex);
             }
+
+            PlayCurrentPageMotion();
         }
 
         bool showPrevious = HasPages && currentPageIndex > 0;
@@ -372,6 +396,8 @@ public class NewsViewUI : MonoBehaviour
 
     private void AddListeners()
     {
+        RemoveListeners();
+
         AddButtonListeners(previousPageButtons, ShowPreviousPage);
         AddButtonListeners(nextPageButtons, ShowNextPageOrContinue);
 
@@ -500,6 +526,104 @@ public class NewsViewUI : MonoBehaviour
         for (int i = 0; i < buttons.Length; i++)
         {
             if (buttons[i] == button)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void PlayCurrentPageMotion()
+    {
+        GameObject pageRoot = pages[currentPageIndex]?.pageRoot;
+
+        if (pageRoot == null)
+            return;
+
+        RectTransform rectTransform = pageRoot.transform as RectTransform;
+
+        if (rectTransform == null)
+            return;
+
+        if (!pageBasePositions.ContainsKey(rectTransform))
+            pageBasePositions.Add(rectTransform, rectTransform.anchoredPosition);
+
+        if (pageMotionRoutine != null)
+            StopCoroutine(pageMotionRoutine);
+
+        pageMotionRoutine = StartCoroutine(AnimatePageIn(pageRoot, rectTransform));
+    }
+
+    private IEnumerator AnimatePageIn(GameObject pageRoot, RectTransform rectTransform)
+    {
+        CanvasGroup canvasGroup = pageRoot.GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null)
+            canvasGroup = pageRoot.AddComponent<CanvasGroup>();
+
+        Vector2 endPosition = pageBasePositions[rectTransform];
+        Vector2 startPosition = endPosition + pageStartOffset;
+        rectTransform.anchoredPosition = startPosition;
+        canvasGroup.alpha = 0f;
+
+        float elapsed = 0f;
+        float duration = Mathf.Max(0.01f, pageFadeDuration);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / duration);
+            float eased = Mathf.SmoothStep(0f, 1f, t);
+
+            rectTransform.anchoredPosition = Vector2.LerpUnclamped(startPosition, endPosition, eased);
+            canvasGroup.alpha = eased;
+
+            yield return null;
+        }
+
+        rectTransform.anchoredPosition = endPosition;
+        canvasGroup.alpha = 1f;
+        pageMotionRoutine = null;
+    }
+
+    private void HandlePageButtonPointerFallback()
+    {
+        Mouse mouse = Mouse.current;
+
+        if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
+            return;
+
+        Vector2 screenPoint = mouse.position.ReadValue();
+
+        if (IsPointerOnAnyButton(previousPageButtons, screenPoint))
+        {
+            ShowPreviousPage();
+            return;
+        }
+    }
+
+    private static bool IsPointerOnAnyButton(Button[] buttons, Vector2 screenPoint)
+    {
+        if (buttons == null)
+            return false;
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Button button = buttons[i];
+
+            if (button == null || !button.gameObject.activeInHierarchy || !button.interactable)
+                continue;
+
+            RectTransform rectTransform = button.transform as RectTransform;
+
+            if (rectTransform == null)
+                continue;
+
+            Canvas canvas = rectTransform.GetComponentInParent<Canvas>();
+            Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera
+                : null;
+
+            if (RectTransformUtility.RectangleContainsScreenPoint(rectTransform, screenPoint, camera))
                 return true;
         }
 

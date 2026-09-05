@@ -65,7 +65,14 @@ public class RefugeesGameManager : MonoBehaviour
 
         if (canContinue)
         {
-            evaluationManager?.LoadGame(SaveCardMenu.GetSavedScore(slot));
+            evaluationManager?.LoadGame(
+                SaveCardMenu.GetSavedScore(slot),
+                SaveCardMenu.GetSavedCorrectCount(slot),
+                SaveCardMenu.GetSavedWrongAcceptCount(slot),
+                SaveCardMenu.GetSavedWrongRejectCount(slot),
+                SaveCardMenu.GetSavedCumulativePerformanceScore(slot),
+                SaveCardMenu.GetSavedMaxCumulativePerformanceScore(slot)
+            );
             CurrentDay = SaveCardMenu.GetSavedDay(slot);
         }
         else
@@ -81,23 +88,31 @@ public class RefugeesGameManager : MonoBehaviour
     {
         if (dayManager == null)
         {
-            SetState(GameState.GameOver);
+            GoToGameOver();
             return;
         }
 
         if (!dayManager.LoadDay(CurrentDay))
         {
-            SetState(GameState.GameOver);
+            GoToGameOver();
             return;
         }
 
-        evaluationManager.ResetDay();
+        evaluationManager?.ResetDay();
 
         InspectedNpcCount = 0;
         RemainingTime = dayManager.DayTime;
 
-        SetState(GameState.News);
+        SetState(GameState.DayIntro);
         DayStarted?.Invoke(CurrentDay);
+    }
+
+    public void BeginDayNews()
+    {
+        if (CurrentState != GameState.DayIntro)
+            return;
+
+        SetState(GameState.News);
     }
 
     public void StartInspection()
@@ -138,7 +153,7 @@ public class RefugeesGameManager : MonoBehaviour
 
         if (evaluationManager == null || dayManager == null)
         {
-            SetState(GameState.GameOver);
+            GoToGameOver();
             return;
         }
 
@@ -147,11 +162,19 @@ public class RefugeesGameManager : MonoBehaviour
             dayManager.Quota
         );
 
-        SaveCardMenu.SaveProgress(CurrentDay, evaluationManager.TotalScore);
+        SaveCardMenu.SaveProgress(
+            CurrentDay,
+            evaluationManager.TotalScore,
+            evaluationManager.CumulativeCorrectCount,
+            evaluationManager.CumulativeWrongAcceptCount,
+            evaluationManager.CumulativeWrongRejectCount,
+            evaluationManager.CumulativePerformanceScore,
+            evaluationManager.MaxCumulativePerformanceScore
+        );
 
         if (evaluationManager.IsGameOver())
         {
-            SetState(GameState.GameOver);
+            GoToGameOver();
             return;
         }
 
@@ -165,7 +188,7 @@ public class RefugeesGameManager : MonoBehaviour
 
         if (CurrentDay >= maxDay)
         {
-            SetState(GameState.GameOver);
+            ShowEnding();
             return;
         }
 
@@ -236,5 +259,15 @@ public class RefugeesGameManager : MonoBehaviour
 
         CurrentState = nextState;
         StateChanged?.Invoke(CurrentState);
+    }
+
+    private void GoToGameOver()
+    {
+        SetState(GameState.GameOver);
+    }
+
+    private void ShowEnding()
+    {
+        SetState(GameState.Ending);
     }
 }

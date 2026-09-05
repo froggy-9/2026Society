@@ -12,6 +12,9 @@ public static class InspectionJudge
         if (npc == null)
             return new InspectionDecision(false, "NPC data is missing.");
 
+        if (npc.useManualDecision)
+            return new InspectionDecision(npc.manualShouldApprove, npc.manualDecisionReason);
+
         if (rules == null)
             return new InspectionDecision(true, "No active rule failed.");
 

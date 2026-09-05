@@ -27,7 +27,7 @@ public class SaveCardMenu : MonoBehaviour
     [Header("Hover")]
     [SerializeField] private float hoverUp = 40f;
     [SerializeField] private float hoverScale = 1.05f;
-    [SerializeField] private float moveSpeed = 14f;
+    [SerializeField] private float moveSpeed = 7f;
 
     private Vector2[] basePositions;
     private Vector3[] baseScales;
@@ -146,13 +146,55 @@ public class SaveCardMenu : MonoBehaviour
         return PlayerPrefs.GetInt(Key(index, "Score"), 0);
     }
 
+    public static int GetSavedCorrectCount(int index)
+    {
+        return PlayerPrefs.GetInt(Key(index, "CorrectCount"), 0);
+    }
+
+    public static int GetSavedWrongAcceptCount(int index)
+    {
+        return PlayerPrefs.GetInt(Key(index, "WrongAcceptCount"), 0);
+    }
+
+    public static int GetSavedWrongRejectCount(int index)
+    {
+        return PlayerPrefs.GetInt(Key(index, "WrongRejectCount"), 0);
+    }
+
+    public static int GetSavedCumulativePerformanceScore(int index)
+    {
+        return PlayerPrefs.GetInt(Key(index, "CumulativePerformanceScore"), 0);
+    }
+
+    public static int GetSavedMaxCumulativePerformanceScore(int index)
+    {
+        return PlayerPrefs.GetInt(Key(index, "MaxCumulativePerformanceScore"), 0);
+    }
+
     public static void SaveProgress(int day, int score)
+    {
+        SaveProgress(day, score, 0, 0, 0, 0, 0);
+    }
+
+    public static void SaveProgress(
+        int day,
+        int score,
+        int correctCount,
+        int wrongAcceptCount,
+        int wrongRejectCount,
+        int cumulativePerformanceScore,
+        int maxCumulativePerformanceScore)
     {
         int index = GetSelectedSlot();
 
         PlayerPrefs.SetInt(Key(index, "HasSave"), 1);
         PlayerPrefs.SetInt(Key(index, "Day"), day);
         PlayerPrefs.SetInt(Key(index, "Score"), score);
+        PlayerPrefs.SetInt(Key(index, "CorrectCount"), correctCount);
+        PlayerPrefs.SetInt(Key(index, "WrongAcceptCount"), wrongAcceptCount);
+        PlayerPrefs.SetInt(Key(index, "WrongRejectCount"), wrongRejectCount);
+        PlayerPrefs.SetInt(Key(index, "CumulativePerformanceScore"), cumulativePerformanceScore);
+        PlayerPrefs.SetInt(Key(index, "MaxCumulativePerformanceScore"), maxCumulativePerformanceScore);
         PlayerPrefs.SetString(Key(index, "SavedAt"), System.DateTime.Now.ToString("yyyy.MM.dd HH:mm"));
         PlayerPrefs.Save();
     }
@@ -162,6 +204,11 @@ public class SaveCardMenu : MonoBehaviour
         PlayerPrefs.DeleteKey(Key(index, "HasSave"));
         PlayerPrefs.DeleteKey(Key(index, "Day"));
         PlayerPrefs.DeleteKey(Key(index, "Score"));
+        PlayerPrefs.DeleteKey(Key(index, "CorrectCount"));
+        PlayerPrefs.DeleteKey(Key(index, "WrongAcceptCount"));
+        PlayerPrefs.DeleteKey(Key(index, "WrongRejectCount"));
+        PlayerPrefs.DeleteKey(Key(index, "CumulativePerformanceScore"));
+        PlayerPrefs.DeleteKey(Key(index, "MaxCumulativePerformanceScore"));
         PlayerPrefs.DeleteKey(Key(index, "SavedAt"));
         PlayerPrefs.Save();
     }
@@ -190,6 +237,11 @@ public class SaveCardMenu : MonoBehaviour
         PlayerPrefs.SetInt(Key(index, "HasSave"), 1);
         PlayerPrefs.SetInt(Key(index, "Day"), 1);
         PlayerPrefs.SetInt(Key(index, "Score"), 0);
+        PlayerPrefs.SetInt(Key(index, "CorrectCount"), 0);
+        PlayerPrefs.SetInt(Key(index, "WrongAcceptCount"), 0);
+        PlayerPrefs.SetInt(Key(index, "WrongRejectCount"), 0);
+        PlayerPrefs.SetInt(Key(index, "CumulativePerformanceScore"), 0);
+        PlayerPrefs.SetInt(Key(index, "MaxCumulativePerformanceScore"), 0);
         PlayerPrefs.SetString(Key(index, "SavedAt"), System.DateTime.Now.ToString("yyyy.MM.dd HH:mm"));
     }
 

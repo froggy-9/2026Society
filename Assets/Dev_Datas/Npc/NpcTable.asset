@@ -71,8 +71,3 @@ MonoBehaviour:
     passportPhoto: {fileID: 21300000, guid: e634d3cf5cb2fb9409fbdbcb54058824, type: 3}
   - npcPhoto: {fileID: 21300000, guid: 2d33e1fc292ac3c4287322db72c04b6a, type: 3}
     passportPhoto: {fileID: 21300000, guid: 85737c10fb0463444be5bd4b98f01b44, type: 3}
-  pleaStories:
-  - storyName: 
-    pleaText: 
-    approvedFollowUpNews: 
-    rejectedFollowUpNews: 
