@@ -48,6 +48,7 @@ MonoBehaviour:
   npcData: {fileID: 0}
   npcLook: {fileID: 5599166247326329470}
   moveSpeed: 2
+  localMoveSpeed: 420
   visualRoot: {fileID: 8770688919325579971}
   walkBobHeight: 0.04
   walkBobSpeed: 8

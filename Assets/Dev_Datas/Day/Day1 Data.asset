@@ -22,5 +22,5 @@ MonoBehaviour:
   npcTable: {fileID: 11400000, guid: aeea35ca5fa97d74f8ca367ba7b6b306, type: 2}
   npcCount: 0
   rejectNpcCount: 0
-  pleaNpcCount: 0
   rejectReasons: 
+  specialNpcs: []

@@ -4,27 +4,6 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 [System.Serializable]
-public class NpcPleaStory
-{
-    [Tooltip("인스펙터에서 구분하기 위한 간청 스토리 이름입니다. 게임 화면에는 출력되지 않습니다.")]
-    public string storyName;
-
-    [Tooltip("간청 상황에서 말풍선에 출력할 사연 문장입니다.")]
-    [TextArea(2, 5)]
-    public string pleaText;
-
-    [FormerlySerializedAs("approveNews")]
-    [Tooltip("간청 NPC를 최종 승인했을 때 다음 뉴스에 추가할 후속 기사 문장입니다. 비워두면 추가되지 않습니다.")]
-    [TextArea(2, 5)]
-    public string approvedFollowUpNews;
-
-    [FormerlySerializedAs("rejectNews")]
-    [Tooltip("간청 NPC를 최종 거절했을 때 다음 뉴스에 추가할 후속 기사 문장입니다. 비워두면 추가되지 않습니다.")]
-    [TextArea(2, 5)]
-    public string rejectedFollowUpNews;
-}
-
-[System.Serializable]
 public class NpcPhotoSet
 {
     [Tooltip("화면에 서 있는 NPC 사진입니다.")]
@@ -131,16 +110,12 @@ public class NpcTableSO : ScriptableObject
     [FormerlySerializedAs("photos")]
     public NpcPhotoSet[] photoPairs;
 
-    [Header("Plea Stories")]
-    [Tooltip("간청 이벤트에서 랜덤으로 뽑을 사연 목록입니다.")]
-    public NpcPleaStory[] pleaStories;
-
     public void ResetRuntimeHistory()
     {
         recentPhotoIndexes.Clear();
     }
 
-    public NPCData CreateRandomNpc(string currentDate, bool hasPlea, NpcFailReason failReason)
+    public NPCData CreateRandomNpc(string currentDate, NpcFailReason failReason)
     {
         NPCData npc = new NPCData();
         DocumentData passport = CreateDocument(DocumentType.Passport);
@@ -170,9 +145,6 @@ public class NpcTableSO : ScriptableObject
         passport.portrait = GetPassportPhoto(photoSet);
 
         ApplyFailReason(npc, currentDate, failReason);
-
-        if (hasPlea)
-            ApplyPleaStory(npc);
 
         return npc;
     }
@@ -263,19 +235,6 @@ public class NpcTableSO : ScriptableObject
             recentPhotoIndexes.Dequeue();
     }
 
-    private void ApplyPleaStory(NPCData npc)
-    {
-        NpcPleaStory story = PickPleaStory();
-
-        if (story == null)
-            return;
-
-        npc.canPlead = true;
-        npc.pleaText = story.pleaText;
-        npc.approvedFollowUpNews = story.approvedFollowUpNews;
-        npc.rejectedFollowUpNews = story.rejectedFollowUpNews;
-    }
-
     private void ApplyFailReason(NPCData npc, string currentDate, NpcFailReason failReason)
     {
         if (npc == null || failReason == NpcFailReason.None)
@@ -320,14 +279,6 @@ public class NpcTableSO : ScriptableObject
                     npc.entryPermit.documentCode = CreateCode("DOC");
                 break;
         }
-    }
-
-    private NpcPleaStory PickPleaStory()
-    {
-        if (pleaStories == null || pleaStories.Length == 0)
-            return null;
-
-        return pleaStories[UnityEngine.Random.Range(0, pleaStories.Length)];
     }
 
     private Sprite GetNpcPhoto(NpcPhotoSet photoSet)

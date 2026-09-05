@@ -128,4 +128,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NPCController
   moveSpeed: 2
-  targetX: 0
+  localMoveSpeed: 420
+  visualRoot: {fileID: 0}
+  walkBobHeight: 0.04
+  walkBobSpeed: 8

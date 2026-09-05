@@ -1,6 +1,6 @@
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public class InspectionInteractionUI : MonoBehaviour
@@ -9,16 +9,9 @@ public class InspectionInteractionUI : MonoBehaviour
     [Tooltip("현재 NPC를 관리하는 NPCManager입니다. 비워두면 씬에서 자동으로 찾습니다.")]
     [SerializeField] private NPCManager npcManager;
 
-    [Tooltip("현재 NPC의 여권/입국허가서 데이터를 가져오는 DocumentManager입니다. 비워두면 씬에서 자동으로 찾습니다.")]
-    [SerializeField] private DocumentManager documentManager;
-
     [Header("NPC UI")]
     [Tooltip("현재 NPC 사진을 표시할 UI Image입니다. 월드 스프라이트를 직접 쓰면 비워둬도 됩니다.")]
     [SerializeField] private Image npcImage;
-
-    [Tooltip("현재 NPC의 한글 성명을 표시할 TMP 텍스트입니다. 화면에 안 보이면 비워둬도 됩니다.")]
-    [FormerlySerializedAs("npcNameText")]
-    [SerializeField] private TMP_Text koreanNameText;
 
     [Header("Plea Bubble")]
     [Tooltip("간청 이벤트 때 사연 문장을 표시할 TMP 텍스트입니다.")]
@@ -39,18 +32,9 @@ public class InspectionInteractionUI : MonoBehaviour
     [Tooltip("말풍선 최대 크기입니다.")]
     [SerializeField] private Vector2 speechMaxSize = new Vector2(800f, 260f);
 
-    [Header("Documents")]
-    [Tooltip("여권 버튼입니다. 현재 NPC가 여권을 가지고 있으면 켜집니다.")]
-    [SerializeField] private Button passportButton;
-
-    [Tooltip("입국허가서 버튼입니다. 현재 NPC가 입국허가서를 가지고 있으면 켜집니다.")]
-    [SerializeField] private Button entryPermitButton;
-
-    [Tooltip("여권을 펼쳐서 보여줄 DocumentViewUI입니다.")]
-    [SerializeField] private DocumentViewUI passportView;
-
-    [Tooltip("입국허가서를 펼쳐서 보여줄 DocumentViewUI입니다.")]
-    [SerializeField] private DocumentViewUI entryPermitView;
+    [Header("Next NPC")]
+    [Tooltip("현재 NPC가 없을 때 다음 NPC를 부르는 버튼입니다.")]
+    [SerializeField] private Button nextNpcButton;
 
     [Header("Judgement")]
     [Tooltip("입국 허가 버튼입니다.")]
@@ -59,20 +43,17 @@ public class InspectionInteractionUI : MonoBehaviour
     [Tooltip("입국 불허가 버튼입니다.")]
     [SerializeField] private Button rejectButton;
 
-    [Tooltip("간청 중 승인 버튼을 강조할 Graphic입니다. 버튼 텍스트나 테두리 이미지를 넣으면 됩니다.")]
-    [SerializeField] private Graphic approveHighlight;
-
     private NPCController shownNpc;
     private bool waitingForPleaDecision;
     private InspectionDecision currentDecision;
+    private int dialogueIndex;
+    private bool showingDialogueSequence;
 
     private void Awake()
     {
         if (npcManager == null)
             npcManager = FindFirstObjectByType<NPCManager>();
 
-        if (documentManager == null)
-            documentManager = FindFirstObjectByType<DocumentManager>();
     }
 
     private void OnEnable()
@@ -94,22 +75,11 @@ public class InspectionInteractionUI : MonoBehaviour
 
         if (shownNpc != npcManager.CurrentNPC)
             RefreshForCurrentNpc();
-    }
 
-    public void OpenPassport()
-    {
-        if (shownNpc == null || !shownNpc.IsReady)
-            return;
+        if (WasDialogueAdvancePressed())
+            AdvanceDialogueByBubbleInput();
 
-        passportView?.Show(documentManager != null ? documentManager.GetPassport() : null);
-    }
-
-    public void OpenEntryPermit()
-    {
-        if (shownNpc == null || !shownNpc.IsReady)
-            return;
-
-        entryPermitView?.Show(documentManager != null ? documentManager.GetEntryPermit() : null);
+        RefreshNextNpcButton();
     }
 
     public void MarkDocumentChecked()
@@ -121,6 +91,9 @@ public class InspectionInteractionUI : MonoBehaviour
         if (shownNpc == null || !shownNpc.IsReady)
             return;
 
+        if (TryAdvanceDialogue())
+            return;
+
         Submit(true);
     }
 
@@ -129,15 +102,23 @@ public class InspectionInteractionUI : MonoBehaviour
         if (shownNpc == null || !shownNpc.IsReady)
             return;
 
+        if (TryAdvanceDialogue())
+            return;
+
         if (!waitingForPleaDecision && ShouldStartPlea())
         {
             waitingForPleaDecision = true;
-            ShowDialogue(shownNpc.Data.pleaText);
-            SetApproveHighlight(true);
+            ShowDialogue(GetPleaText());
             return;
         }
 
         Submit(false);
+    }
+
+    public void RequestNextNpc()
+    {
+        npcManager?.RequestNextNPC();
+        RefreshNextNpcButton();
     }
 
     private void Submit(bool approved)
@@ -166,7 +147,6 @@ public class InspectionInteractionUI : MonoBehaviour
         if (shownNpc == null)
         {
             SetNpcVisible(false);
-            SetDocumentButtons();
             return;
         }
 
@@ -183,9 +163,8 @@ public class InspectionInteractionUI : MonoBehaviour
         );
 
         SetNpcVisible(true);
-        SetText(koreanNameText, shownNpc.Data != null ? shownNpc.Data.koreanName : string.Empty);
-        SetDocumentButtons();
-        ShowDialogue(string.Empty);
+        StartDialogueSequence();
+        RefreshNextNpcButton();
     }
 
     private void OnShownNpcArrived(NPCController npc)
@@ -193,12 +172,27 @@ public class InspectionInteractionUI : MonoBehaviour
         if (npc != shownNpc)
             return;
 
-        ShowDialogue(string.Empty);
+        if (!showingDialogueSequence)
+            ShowDialogue(string.Empty);
     }
 
     private bool ShouldStartPlea()
     {
         return shownNpc != null && shownNpc.Data != null && shownNpc.Data.canPlead;
+    }
+
+    private string GetPleaText()
+    {
+        if (shownNpc?.Data == null)
+            return string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(shownNpc.Data.pleaText))
+            return shownNpc.Data.pleaText;
+
+        if (shownNpc.Data.dialogueLines != null && shownNpc.Data.dialogueLines.Length > 0)
+            return shownNpc.Data.dialogueLines[shownNpc.Data.dialogueLines.Length - 1];
+
+        return string.Empty;
     }
 
     private void StorePleaNews(bool approved)
@@ -216,23 +210,21 @@ public class InspectionInteractionUI : MonoBehaviour
     {
         waitingForPleaDecision = false;
         currentDecision = default;
-        SetApproveHighlight(false);
-        passportView?.Close();
-        entryPermitView?.Close();
+        dialogueIndex = 0;
+        showingDialogueSequence = false;
+        RefreshNextNpcButton();
     }
 
     private void AddListeners()
     {
-        passportButton?.onClick.AddListener(OpenPassport);
-        entryPermitButton?.onClick.AddListener(OpenEntryPermit);
+        nextNpcButton?.onClick.AddListener(RequestNextNpc);
         approveButton?.onClick.AddListener(Approve);
         rejectButton?.onClick.AddListener(Reject);
     }
 
     private void RemoveListeners()
     {
-        passportButton?.onClick.RemoveListener(OpenPassport);
-        entryPermitButton?.onClick.RemoveListener(OpenEntryPermit);
+        nextNpcButton?.onClick.RemoveListener(RequestNextNpc);
         approveButton?.onClick.RemoveListener(Approve);
         rejectButton?.onClick.RemoveListener(Reject);
     }
@@ -241,12 +233,6 @@ public class InspectionInteractionUI : MonoBehaviour
     {
         if (shownNpc != null)
             shownNpc.Arrived -= OnShownNpcArrived;
-    }
-
-    private void SetApproveHighlight(bool active)
-    {
-        if (approveHighlight != null)
-            approveHighlight.enabled = active;
     }
 
     private void SetNpcVisible(bool visible)
@@ -259,20 +245,88 @@ public class InspectionInteractionUI : MonoBehaviour
 
         if (!visible)
         {
-            SetText(koreanNameText, string.Empty);
             ShowDialogue(string.Empty);
         }
     }
 
-    private void SetDocumentButtons()
+    private void RefreshNextNpcButton()
     {
-        NPCData data = shownNpc != null ? shownNpc.Data : null;
+        if (nextNpcButton == null)
+            return;
 
-        if (passportButton != null)
-            passportButton.gameObject.SetActive(data != null && data.passport != null);
+        nextNpcButton.gameObject.SetActive(npcManager != null && npcManager.CanRequestNextNpc);
+    }
 
-        if (entryPermitButton != null)
-            entryPermitButton.gameObject.SetActive(data != null && data.entryPermit != null);
+    private void StartDialogueSequence()
+    {
+        dialogueIndex = 0;
+        showingDialogueSequence = shownNpc?.Data?.dialogueLines != null
+            && shownNpc.Data.dialogueLines.Length > 0;
+
+        if (showingDialogueSequence)
+        {
+            ShowDialogue(shownNpc.Data.dialogueLines[0]);
+            dialogueIndex = 1;
+            return;
+        }
+
+        ShowDialogue(string.Empty);
+    }
+
+    private bool TryAdvanceDialogue()
+    {
+        if (!showingDialogueSequence || shownNpc?.Data?.dialogueLines == null)
+            return false;
+
+        if (dialogueIndex < shownNpc.Data.dialogueLines.Length)
+        {
+            ShowDialogue(shownNpc.Data.dialogueLines[dialogueIndex]);
+            dialogueIndex++;
+            return true;
+        }
+
+        showingDialogueSequence = false;
+        ShowDialogue(string.Empty);
+        return true;
+    }
+
+    private void AdvanceDialogueByBubbleInput()
+    {
+        if (TryAdvanceDialogue())
+            return;
+
+        if (waitingForPleaDecision)
+            ShowDialogue(string.Empty);
+    }
+
+    private bool WasDialogueAdvancePressed()
+    {
+        if (speechBubble == null || !speechBubble.activeInHierarchy)
+            return false;
+
+        Keyboard keyboard = Keyboard.current;
+
+        if (keyboard != null && keyboard.spaceKey.wasPressedThisFrame)
+            return true;
+
+        Mouse mouse = Mouse.current;
+
+        if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
+            return false;
+
+        RectTransform target = speechBubbleRect != null ? speechBubbleRect : speechBubble.transform as RectTransform;
+
+        if (target == null)
+            return false;
+
+        Canvas canvas = target.GetComponentInParent<Canvas>();
+        Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay ? canvas.worldCamera : null;
+
+        return RectTransformUtility.RectangleContainsScreenPoint(
+            target,
+            mouse.position.ReadValue(),
+            camera
+        );
     }
 
     private void ShowDialogue(string value)

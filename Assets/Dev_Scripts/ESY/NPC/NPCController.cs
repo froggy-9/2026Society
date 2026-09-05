@@ -14,6 +14,7 @@ public class NPCController : MonoBehaviour
 
     [Header("Move")]
     [SerializeField] private float moveSpeed = 2f;
+    [SerializeField] private float localMoveSpeed = 420f;
     [SerializeField] private float walkBobHeight = 0.04f;
     [SerializeField] private float walkBobSpeed = 8f;
 
@@ -22,6 +23,7 @@ public class NPCController : MonoBehaviour
     private Transform rejectExitPoint;
     private Vector3 visualStartLocalPosition;
     private Vector3 moveTarget;
+    private bool moveInLocalSpace;
     private bool hasMoveTarget;
     private bool isLeaving;
 
@@ -53,7 +55,7 @@ public class NPCController : MonoBehaviour
         npcLook?.SetPhoto(Data != null ? Data.portrait : null);
 
         if (waitPoint != null)
-            MoveTo(waitPoint.position);
+            MoveToPoint(waitPoint);
         else
             ArriveNow();
     }
@@ -77,6 +79,15 @@ public class NPCController : MonoBehaviour
         UpdateWalkLook();
     }
 
+    private void MoveToPoint(Transform point)
+    {
+        if (point == null)
+            return;
+
+        moveInLocalSpace = point.parent != null && point.parent == transform.parent;
+        MoveTo(moveInLocalSpace ? point.localPosition : point.position);
+    }
+
     private void MoveTo(Vector3 target)
     {
         moveTarget = target;
@@ -89,23 +100,36 @@ public class NPCController : MonoBehaviour
         isLeaving = true;
 
         if (exitPoint != null)
-            MoveTo(exitPoint.position);
+            MoveToPoint(exitPoint);
         else
+        {
+            moveInLocalSpace = false;
             MoveTo(transform.position + Vector3.right * 10f);
+        }
     }
 
     private void MoveToTarget()
     {
-        transform.position = Vector3.MoveTowards(
-            transform.position,
+        Vector3 currentPosition = moveInLocalSpace ? transform.localPosition : transform.position;
+        Vector3 nextPosition = Vector3.MoveTowards(
+            currentPosition,
             moveTarget,
-            moveSpeed * Time.deltaTime
+            GetCurrentMoveSpeed() * Time.deltaTime
         );
 
-        if (Vector3.Distance(transform.position, moveTarget) > 0.01f)
+        if (moveInLocalSpace)
+            transform.localPosition = nextPosition;
+        else
+            transform.position = nextPosition;
+
+        if (Vector3.Distance(nextPosition, moveTarget) > 0.01f)
             return;
 
-        transform.position = moveTarget;
+        if (moveInLocalSpace)
+            transform.localPosition = moveTarget;
+        else
+            transform.position = moveTarget;
+
         hasMoveTarget = false;
         ResetWalkLook();
 
@@ -123,6 +147,12 @@ public class NPCController : MonoBehaviour
     {
         IsReady = true;
         Arrived?.Invoke(this);
+    }
+
+    private float GetCurrentMoveSpeed()
+    {
+        float speed = moveInLocalSpace ? localMoveSpeed : moveSpeed;
+        return Mathf.Max(0.01f, speed);
     }
 
     private void UpdateWalkLook()

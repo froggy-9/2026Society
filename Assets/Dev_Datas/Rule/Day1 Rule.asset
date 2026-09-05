@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RuleSO
   ruleID: 0
   ruleName: Check Pass
-  description: Check Date
-  checkTypes: 00000000
+  description: "1. \uC5EC\uAD8C\uC758 \uC0AC\uC9C4\uACFC \uC5BC\uAD74\uC774 \uC77C\uCE58\uD574\uC57C
+    \uD569\uB2C8\uB2E4.\n2.\uC5EC\uAD8C\uC774 \uB9CC\uB8CC\uB418\uC9C0 \uC54A\uC544\uC57C
+    \uD569\uB2C8\uB2E4.\n3. "
+  checkTypes: 010000000b000000
   checkType: 0

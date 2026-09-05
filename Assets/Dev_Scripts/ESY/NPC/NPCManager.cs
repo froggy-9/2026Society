@@ -1,27 +1,28 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class NPCManager : MonoBehaviour
 {
+    public event System.Action QueueChanged;
+
     [Header("NPC Spawner")]
+    [Tooltip("NPC를 실제 씬에 생성하는 스포너입니다.")]
     [SerializeField] private NPCSpawner spawner;
 
-    [Header("NPC Wait Time")]
-    [FormerlySerializedAs("firstNpcWaitTime")]
-    [FormerlySerializedAs("firstSpawnDelay")]
-    [SerializeField] private Vector2 firstNpcWaitRange = new Vector2(1f, 3f);
-    [FormerlySerializedAs("nextNpcWaitTime")]
-    [FormerlySerializedAs("nextSpawnDelay")]
-    [SerializeField] private Vector2 nextNpcWaitRange = new Vector2(1f, 3f);
+    [Header("Spawn Flow")]
+    [Tooltip("심사 시작 직후 첫 NPC를 자동으로 부를지 여부입니다.")]
+    [SerializeField] private bool spawnFirstNpcAutomatically = true;
 
     private readonly List<NPCData> remainingNpcs = new List<NPCData>();
 
-    private Coroutine spawnRoutine;
     private NPCController currentNPC;
 
     public NPCController CurrentNPC => currentNPC;
+    public bool HasQueuedNpc => remainingNpcs.Count > 0;
+    public bool CanRequestNextNpc => currentNPC == null
+        && HasQueuedNpc
+        && RefugeesGameManager.Instance != null
+        && RefugeesGameManager.Instance.CanSpawnNpc();
 
     private void OnEnable()
     {
@@ -76,7 +77,16 @@ public class NPCManager : MonoBehaviour
             return;
 
         currentNPC.Exited += OnNPCExited;
+        QueueChanged?.Invoke();
         Debug.Log($"NPC spawned: {currentNPC.Data.koreanName}");
+    }
+
+    public void RequestNextNPC()
+    {
+        if (!CanRequestNextNpc)
+            return;
+
+        SpawnNextNPC();
     }
 
     public void CompleteCurrentNPC(bool approved)
@@ -93,19 +103,20 @@ public class NPCManager : MonoBehaviour
     public void OnNPCFinished()
     {
         ClearCurrentNPC();
-        QueueSpawn(nextNpcWaitRange);
+        QueueChanged?.Invoke();
     }
 
     private void OnGameStateChanged(GameState state)
     {
         if (state == GameState.Inspection)
         {
-            QueueSpawn(firstNpcWaitRange);
+            if (spawnFirstNpcAutomatically)
+                SpawnNextNPC();
+            else
+                QueueChanged?.Invoke();
+
             return;
         }
-
-        if (state == GameState.News || state == GameState.Result || state == GameState.GameOver)
-            StopQueuedSpawn();
     }
 
     private void OnDayStarted(int day)
@@ -123,9 +134,7 @@ public class NPCManager : MonoBehaviour
                 ? dayData.npcCount
                 : dayData.targetInspectionCount;
 
-            int pleaCount = Mathf.Clamp(dayData.pleaNpcCount, 0, randomCount);
             int rejectCount = Mathf.Clamp(dayData.rejectNpcCount, 0, randomCount);
-            List<int> pleaIndexes = CreateRandomIndexes(randomCount, pleaCount);
             List<int> rejectIndexes = CreateRandomIndexes(randomCount, rejectCount);
 
             for (int i = 0; i < randomCount; i++)
@@ -136,11 +145,14 @@ public class NPCManager : MonoBehaviour
 
                 remainingNpcs.Add(dayData.npcTable.CreateRandomNpc(
                     dayData.currentDate,
-                    pleaIndexes.Contains(i),
                     failReason
                 ));
             }
         }
+
+        AddSpecialNpcs(dayData);
+        Shuffle(remainingNpcs);
+        QueueChanged?.Invoke();
     }
 
     private List<int> CreateRandomIndexes(int maxCount, int count)
@@ -172,35 +184,6 @@ public class NPCManager : MonoBehaviour
         OnNPCFinished();
     }
 
-    private void QueueSpawn(Vector2 waitRange)
-    {
-        StopQueuedSpawn();
-        spawnRoutine = StartCoroutine(SpawnAfterWait(GetRandomWaitTime(waitRange)));
-    }
-
-    private IEnumerator SpawnAfterWait(float waitTime)
-    {
-        yield return new WaitForSeconds(waitTime);
-        spawnRoutine = null;
-        SpawnNextNPC();
-    }
-
-    private float GetRandomWaitTime(Vector2 waitRange)
-    {
-        float min = Mathf.Min(waitRange.x, waitRange.y);
-        float max = Mathf.Max(waitRange.x, waitRange.y);
-        return Random.Range(min, max);
-    }
-
-    private void StopQueuedSpawn()
-    {
-        if (spawnRoutine == null)
-            return;
-
-        StopCoroutine(spawnRoutine);
-        spawnRoutine = null;
-    }
-
     private void ClearCurrentNPC()
     {
         if (currentNPC != null)
@@ -218,6 +201,36 @@ public class NPCManager : MonoBehaviour
         NPCData npcData = remainingNpcs[index];
         remainingNpcs.RemoveAt(index);
         return npcData;
+    }
+
+    private void AddSpecialNpcs(DayDataSO dayData)
+    {
+        if (dayData == null || dayData.specialNpcs == null)
+            return;
+
+        for (int i = 0; i < dayData.specialNpcs.Length; i++)
+        {
+            SpecialNpcSO specialNpc = dayData.specialNpcs[i];
+
+            if (specialNpc == null || !specialNpc.CanAppearOnDay(dayData.day))
+                continue;
+
+            remainingNpcs.Add(specialNpc.CreateNpc());
+        }
+    }
+
+    private static void Shuffle<T>(List<T> values)
+    {
+        if (values == null)
+            return;
+
+        for (int i = 0; i < values.Count; i++)
+        {
+            int swapIndex = Random.Range(i, values.Count);
+            T temp = values[i];
+            values[i] = values[swapIndex];
+            values[swapIndex] = temp;
+        }
     }
 
     private void RegisterGameManager()
