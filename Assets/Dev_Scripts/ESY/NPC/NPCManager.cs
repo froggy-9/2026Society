@@ -129,6 +129,12 @@ public class NPCManager : MonoBehaviour
 
     private void OnDayStarted(int day)
     {
+        if (currentNPC != null)
+        {
+            Destroy(currentNPC.gameObject);
+            ClearCurrentNPC();
+        }
+
         loadedDay = day;
         DayDataSO dayData = RefugeesGameManager.Instance.GetCurrentDayData();
 
@@ -141,13 +147,14 @@ public class NPCManager : MonoBehaviour
 
             int randomCount = dayData.npcCount > 0
                 ? dayData.npcCount
-                : dayData.targetInspectionCount;
+                : Mathf.Max(1, dayData.maxInspectionCount);
 
             for (int i = 0; i < randomCount; i++)
             {
                 remainingNpcs.Add(dayData.npcTable.CreateRandomNpc(
                     dayData.currentDate,
-                    dayData.rejectReasons
+                    dayData.rejectReasons,
+                    dayData.rule
                 ));
             }
         }

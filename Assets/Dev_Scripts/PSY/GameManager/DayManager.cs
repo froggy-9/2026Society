@@ -5,6 +5,7 @@ public class DayManager : MonoBehaviour
 {
     [SerializeField] private List<DayDataSO> dayDatas;
     private readonly List<RuleSO> currentDayRules = new List<RuleSO>();
+    private RuleSO runtimeRule;
 
     public DayDataSO CurrentDayData { get; private set; }
 
@@ -12,7 +13,7 @@ public class DayManager : MonoBehaviour
 
     public List<RuleSO> CurrentRules => currentDayRules;
 
-    public RuleSO TodayRule => CurrentDayData != null ? CurrentDayData.rule : null;
+    public RuleSO TodayRule => runtimeRule;
 
     public string CurrentRuleDescription => CurrentDayData != null ? CurrentDayData.ruleDescription : string.Empty;
 
@@ -39,10 +40,23 @@ public class DayManager : MonoBehaviour
     private void LoadCurrentDayRules()
     {
         currentDayRules.Clear();
+        if (runtimeRule != null)
+            Destroy(runtimeRule);
 
-        if (CurrentDayData == null || CurrentDayData.rule == null)
+        if (CurrentDayData == null)
             return;
 
-        currentDayRules.Add(CurrentDayData.rule);
+        runtimeRule = CurrentDayData.rule != null
+            ? Instantiate(CurrentDayData.rule)
+            : ScriptableObject.CreateInstance<RuleSO>();
+        runtimeRule.checkTypes = CurrentDayData.GetInspectionChecks();
+        runtimeRule.checkType = RuleCheckType.None;
+        currentDayRules.Add(runtimeRule);
+    }
+
+    private void OnDestroy()
+    {
+        if (runtimeRule != null)
+            Destroy(runtimeRule);
     }
 }

@@ -9446,6 +9446,7 @@ MonoBehaviour:
   icon: {fileID: 266452753}
   fullscreenIcon: {fileID: 1279208462, guid: 92af6f90d203aef4c93f2ba3050575bf, type: 3}
   windowIcon: {fileID: -573307926, guid: 92af6f90d203aef4c93f2ba3050575bf, type: 3}
+  windowedWidth: 1600
 --- !u!1 &1808539097
 GameObject:
   m_ObjectHideFlags: 0
@@ -10703,7 +10704,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameAudioManager
   bgmSource: {fileID: 0}
   sfxSource: {fileID: 0}
-  startBgm: {fileID: 0}
+  startBgm: {fileID: 8300000, guid: 7753cf8cfd45d2049b84100b219648a2, type: 3}
   defaultButtonSfx: {fileID: 0}
   defaultBgmVolume: 1
   defaultSfxVolume: 1

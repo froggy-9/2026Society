@@ -222,10 +222,9 @@ MonoBehaviour:
   - npcPhoto: {fileID: 21300000, guid: 2d33e1fc292ac3c4287322db72c04b6a, type: 3}
     passportPhoto: {fileID: 21300000, guid: 85737c10fb0463444be5bd4b98f01b44, type: 3}
   invalidNpcChance: 0.3
-  passportSubmissionChance: 1
-  entryPermitSubmissionChance: 1
+  passportSubmissionChance: 0.8
   medicalHistoryChance: 0.2
-  medicalCertificateSubmissionChance: 1
+  medicalCertificateSubmissionChance: 0.8
   failReasonWeights: []
   additionalErrorChance: 0
   maxFailReasonsPerNpc: 1

@@ -15,6 +15,7 @@ MonoBehaviour:
   day: 2
   currentDate: 2050-06-18
   targetInspectionCount: 11
+  maxInspectionCount: 11
   dayTime: 30
   news: {fileID: 11400000, guid: e240f44330e516d41a64d09bfb060245, type: 2}
   ruleDescription: 
@@ -22,5 +23,6 @@ MonoBehaviour:
   npcTable: {fileID: 11400000, guid: aeea35ca5fa97d74f8ca367ba7b6b306, type: 2}
   npcCount: 0
   rejectNpcCount: 0
-  rejectReasons: 
-  specialNpcs: []
+  rejectReasons: 0100000004000000110000000d0000001300000008000000
+  specialNpcs:
+  - {fileID: 11400000, guid: f4d178903c8f81d42b5a584f2f4889e9, type: 2}

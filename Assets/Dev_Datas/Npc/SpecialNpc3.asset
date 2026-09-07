@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e3a8b12de5641c4f9310c9fc64e5a16, type: 3}
   m_Name: SpecialNpc3
   m_EditorClassIdentifier: Assembly-CSharp::SpecialNpcSO
-  appearDays: 
+  appearDays: 03000000
   koreanName: 
   englishSurname: 
   englishGivenNames: 
@@ -24,6 +24,7 @@ MonoBehaviour:
   job: 
   address: 
   family: []
+  psychiatricHistory: 
   carriesPassport: 1
   passport:
     documentType: 0
@@ -46,7 +47,6 @@ MonoBehaviour:
     psychiatricHistory: 
     medicalDiagnosis: 
     issueDate: 
-    issuingAuthority: 
     passportExpiryDate: 
     medicalCertificateDate: 
     medicalCertificateValidUntil: 
@@ -72,7 +72,6 @@ MonoBehaviour:
     psychiatricHistory: 
     medicalDiagnosis: 
     issueDate: 
-    issuingAuthority: 
     passportExpiryDate: 
     medicalCertificateDate: 
     medicalCertificateValidUntil: 
@@ -98,7 +97,6 @@ MonoBehaviour:
     psychiatricHistory: 
     medicalDiagnosis: 
     issueDate: 
-    issuingAuthority: 
     passportExpiryDate: 
     medicalCertificateDate: 
     medicalCertificateValidUntil: 

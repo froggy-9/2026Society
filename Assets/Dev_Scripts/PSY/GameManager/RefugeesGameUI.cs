@@ -368,7 +368,7 @@ public class RefugeesGameUI : MonoBehaviour
         SetText(timerText, FormatTime(gameManager.RemainingTime));
 
         if (dayData != null)
-            SetText(quotaText, $"{gameManager.InspectedNpcCount} / {dayData.targetInspectionCount}");
+            SetText(quotaText, $"{gameManager.InspectedNpcCount} / {gameManager.MaxInspectionCount}");
     }
 
     private static string FormatTime(float seconds)

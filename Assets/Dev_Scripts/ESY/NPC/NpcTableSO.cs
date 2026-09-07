@@ -29,23 +29,21 @@ public class NpcNameSet
 
 public enum NpcFailReason
 {
-    None,
-    MissingPassport,
-    MissingEntryPermit,
-    MissingMedicalCertificate,
-    PortraitMismatch,
-    NameMismatch,
-    GenderMismatch,
-    AgeMismatch,
-    OccupationMismatch,
-    ResidenceMismatch,
-    FamilyRelationshipMismatch,
-    BirthDateMismatch,
-    MedicalHistoryMismatch,
-    PassportExpired,
-    MedicalCertificateExpired,
-    PassportCodeMismatch,
-    DocumentCodeMismatch
+    // Preserve the IDs stored in Day Data and NPC table assets.
+    None = 0,
+    MissingPassport = 1,
+    PortraitMismatch = 4,
+    NameMismatch = 5,
+    GenderMismatch = 6,
+    AgeMismatch = 7,
+    OccupationMismatch = 8,
+    BirthDateMismatch = 11,
+    PassportExpired = 13,
+    PassportCodeMismatch = 15,
+    DocumentCodeMismatch = 16,
+    NationalityMismatch = 17,
+    CriminalRecord = 18,
+    BannedNationality = 19
 }
 
 [System.Serializable]
@@ -173,20 +171,16 @@ public class NpcTableSO : ScriptableObject
     public float invalidNpcChance = 0.3f;
 
     [Range(0f, 1f)]
-    [Tooltip("불합격 NPC가 여권을 제출할 확률입니다. 정상 NPC는 항상 제출합니다.")]
-    public float passportSubmissionChance = 1f;
-
-    [Range(0f, 1f)]
-    [Tooltip("불합격 NPC가 입국 신고서를 제출할 확률입니다. 정상 NPC는 항상 제출합니다.")]
-    public float entryPermitSubmissionChance = 1f;
+    [Tooltip("일반 NPC가 여권을 가지고 올 확률입니다. 입국 신고서는 항상 제출합니다.")]
+    public float passportSubmissionChance = 0.8f;
 
     [Range(0f, 1f)]
     [Tooltip("NPC가 병원 내역/병명을 가지고 생성될 확률입니다.")]
     public float medicalHistoryChance = 0.2f;
 
     [Range(0f, 1f)]
-    [Tooltip("불합격 NPC가 진단서를 제출할 확률입니다. 정상 NPC는 항상 제출합니다.")]
-    public float medicalCertificateSubmissionChance = 1f;
+    [Tooltip("병원 내역이 있는 일반 NPC가 진단서를 가지고 올 확률입니다. 병원 내역이 없으면 제출하지 않습니다.")]
+    public float medicalCertificateSubmissionChance = 0.8f;
 
     [Tooltip("불합격 NPC일 때 선택될 오류 종류별 가중치입니다. 비워두면 기본 오류 목록에서 랜덤 선택합니다.")]
     public WeightedFailReason[] failReasonWeights;
@@ -239,9 +233,11 @@ public class NpcTableSO : ScriptableObject
         recentPhotoIndexes.Clear();
     }
 
-    public NPCData CreateRandomNpc(string currentDate, NpcFailReason[] allowedFailReasons)
+    public NPCData CreateRandomNpc(string currentDate, NpcFailReason[] allowedFailReasons, RuleSO rule = null)
     {
-        return CreateRandomNpc(currentDate, PickFailReason(allowedFailReasons), allowedFailReasons);
+        NpcFailReason reason = allowedFailReasons == null || allowedFailReasons.Length == 0
+            ? NpcFailReason.None : PickFailReason(allowedFailReasons);
+        return CreateRandomNpc(currentDate, reason, allowedFailReasons, rule);
     }
 
     public NPCData CreateRandomNpc(string currentDate, NpcFailReason failReason)
@@ -249,7 +245,7 @@ public class NpcTableSO : ScriptableObject
         return CreateRandomNpc(currentDate, failReason, null);
     }
 
-    private NPCData CreateRandomNpc(string currentDate, NpcFailReason failReason, NpcFailReason[] allowedFailReasons)
+    private NPCData CreateRandomNpc(string currentDate, NpcFailReason failReason, NpcFailReason[] allowedFailReasons, RuleSO rule = null)
     {
         NPCData npc = new NPCData();
         DocumentData passport = CreateDocument(DocumentType.Passport);
@@ -272,19 +268,21 @@ public class NpcTableSO : ScriptableObject
             ? PickWeightedString(weightedMedicalHistories, medicalHistories, string.Empty)
             : string.Empty;
         npc.documentCode = CreateCode("DOC");
+        if (!npc.HasMedicalHistory)
+            npc.psychiatricHistory = string.Empty;
         npc.passportCode = PickWeightedString(weightedPassportNumbers, passportNumbers, CreateCode("PAS"));
         npc.passport = passport;
         npc.entryPermit = entryPermit;
-        npc.medicalCertificate = medicalCertificate;
+        npc.medicalCertificate = npc.HasMedicalHistory ? medicalCertificate : null;
 
         CopyNpcToDocument(passport, npc, currentDate);
         CopyNpcToDocument(entryPermit, npc, currentDate);
         CopyNpcToDocument(medicalCertificate, npc, currentDate);
         passport.portrait = GetPassportPhoto(photoSet);
 
-        ApplyFailReason(npc, currentDate, failReason);
-        ApplyAdditionalFailReasons(npc, currentDate, failReason, allowedFailReasons);
-        ApplySubmissionChance(npc, failReason);
+        ApplyFailReason(npc, currentDate, failReason, rule);
+        ApplyAdditionalFailReasons(npc, currentDate, failReason, allowedFailReasons, rule);
+        ApplySubmissionChance(npc);
 
         return npc;
     }
@@ -383,23 +381,40 @@ public class NpcTableSO : ScriptableObject
             recentPhotoIndexes.Dequeue();
     }
 
-    private void ApplyFailReason(NPCData npc, string currentDate, NpcFailReason failReason)
+    private void ApplyFailReason(NPCData npc, string currentDate, NpcFailReason failReason, RuleSO rule)
     {
         if (npc == null || failReason == NpcFailReason.None)
             return;
 
         switch (failReason)
         {
+            case NpcFailReason.BannedNationality:
+                string banned = Pick(rule != null ? rule.bannedNationalities : null, string.Empty);
+                if (!string.IsNullOrWhiteSpace(banned))
+                {
+                    npc.nationality = banned;
+                    if (npc.passport != null) npc.passport.nationality = banned;
+                    if (npc.entryPermit != null) npc.entryPermit.nationality = banned;
+                }
+                break;
+
             case NpcFailReason.MissingPassport:
                 npc.passport = null;
                 break;
 
-            case NpcFailReason.MissingEntryPermit:
-                npc.entryPermit = null;
+            case NpcFailReason.NationalityMismatch:
+                if (npc.entryPermit != null)
+                    npc.entryPermit.nationality = PickDifferentText(npc.nationality, nationalities, "Unknown");
                 break;
 
-            case NpcFailReason.MissingMedicalCertificate:
-                npc.medicalCertificate = null;
+            case NpcFailReason.CriminalRecord:
+                npc.hasCriminalRecord = true;
+                npc.criminalRecordDetails = "Criminal record";
+                if (npc.entryPermit != null)
+                {
+                    npc.entryPermit.hasCriminalRecord = true;
+                    npc.entryPermit.criminalRecordDetails = npc.criminalRecordDetails;
+                }
                 break;
 
             case NpcFailReason.PortraitMismatch:
@@ -426,16 +441,6 @@ public class NpcTableSO : ScriptableObject
                     npc.entryPermit.occupation = PickDifferentText(npc.job, jobs, "Unknown");
                 break;
 
-            case NpcFailReason.ResidenceMismatch:
-                if (npc.entryPermit != null)
-                    npc.entryPermit.residence = PickDifferentText(npc.address, addresses, "Unknown");
-                break;
-
-            case NpcFailReason.FamilyRelationshipMismatch:
-                if (npc.entryPermit != null)
-                    npc.entryPermit.familyRelationship = PickDifferentText(npc.family != null && npc.family.Length > 0 ? npc.family[0] : string.Empty, familyRelationships, "Unknown");
-                break;
-
             case NpcFailReason.BirthDateMismatch:
                 if (npc.entryPermit != null)
                 {
@@ -444,19 +449,9 @@ public class NpcTableSO : ScriptableObject
                 }
                 break;
 
-            case NpcFailReason.MedicalHistoryMismatch:
-                if (npc.medicalCertificate != null)
-                    npc.medicalCertificate.medicalDiagnosis = PickDifferentText(npc.psychiatricHistory, medicalHistories, "Undisclosed");
-                break;
-
             case NpcFailReason.PassportExpired:
                 if (npc.passport != null)
                     npc.passport.passportExpiryDate = Pick(expiredPassportExpiryDates, CreateExpiredDate(currentDate));
-                break;
-
-            case NpcFailReason.MedicalCertificateExpired:
-                if (npc.medicalCertificate != null)
-                    npc.medicalCertificate.medicalCertificateValidUntil = Pick(expiredMedicalCertificateDates, CreateExpiredDate(currentDate));
                 break;
 
             case NpcFailReason.PassportCodeMismatch:
@@ -471,18 +466,15 @@ public class NpcTableSO : ScriptableObject
         }
     }
 
-    private void ApplySubmissionChance(NPCData npc, NpcFailReason failReason)
+    private void ApplySubmissionChance(NPCData npc)
     {
-        if (npc == null || failReason == NpcFailReason.None)
+        if (npc == null)
             return;
 
-        if (UnityEngine.Random.value > passportSubmissionChance)
+        if (passportSubmissionChance < 1f && UnityEngine.Random.value >= passportSubmissionChance)
             npc.passport = null;
 
-        if (UnityEngine.Random.value > entryPermitSubmissionChance)
-            npc.entryPermit = null;
-
-        if (UnityEngine.Random.value > medicalCertificateSubmissionChance)
+        if (medicalCertificateSubmissionChance < 1f && UnityEngine.Random.value >= medicalCertificateSubmissionChance)
             npc.medicalCertificate = null;
     }
 
@@ -490,7 +482,8 @@ public class NpcTableSO : ScriptableObject
         NPCData npc,
         string currentDate,
         NpcFailReason primaryFailReason,
-        NpcFailReason[] allowedFailReasons)
+        NpcFailReason[] allowedFailReasons,
+        RuleSO rule)
     {
         if (npc == null || primaryFailReason == NpcFailReason.None)
             return;
@@ -507,7 +500,7 @@ public class NpcTableSO : ScriptableObject
             if (nextReason == NpcFailReason.None)
                 break;
 
-            ApplyFailReason(npc, currentDate, nextReason);
+            ApplyFailReason(npc, currentDate, nextReason, rule);
         }
     }
 
@@ -624,19 +617,18 @@ public class NpcTableSO : ScriptableObject
     {
         NpcFailReason[] defaults =
         {
-            NpcFailReason.MissingEntryPermit,
-            NpcFailReason.MissingMedicalCertificate,
+            NpcFailReason.MissingPassport,
             NpcFailReason.PortraitMismatch,
             NpcFailReason.NameMismatch,
             NpcFailReason.GenderMismatch,
             NpcFailReason.AgeMismatch,
             NpcFailReason.OccupationMismatch,
-            NpcFailReason.ResidenceMismatch,
-            NpcFailReason.MedicalHistoryMismatch,
+            NpcFailReason.BirthDateMismatch,
             NpcFailReason.PassportExpired,
-            NpcFailReason.MedicalCertificateExpired,
             NpcFailReason.PassportCodeMismatch,
-            NpcFailReason.DocumentCodeMismatch
+            NpcFailReason.DocumentCodeMismatch,
+            NpcFailReason.NationalityMismatch,
+            NpcFailReason.CriminalRecord
         };
 
         return defaults[UnityEngine.Random.Range(0, defaults.Length)];

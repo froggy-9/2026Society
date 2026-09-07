@@ -43,6 +43,18 @@ public class NPCData
     [TextArea(2, 5)]
     public string psychiatricHistory;
 
+    public bool HasMedicalHistory => HasMedicalRecord(psychiatricHistory);
+
+    public static bool HasMedicalRecord(string history)
+    {
+        if (string.IsNullOrWhiteSpace(history))
+            return false;
+
+        string value = history.Trim();
+        return value != "없음"
+            && !string.Equals(value, "None", System.StringComparison.OrdinalIgnoreCase);
+    }
+
     [Header("Documents")]
     public DocumentData passport;
     public DocumentData entryPermit;

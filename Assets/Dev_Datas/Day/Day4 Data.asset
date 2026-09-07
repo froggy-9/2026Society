@@ -15,6 +15,7 @@ MonoBehaviour:
   day: 4
   currentDate: 2050-06-20
   targetInspectionCount: 13
+  maxInspectionCount: 13
   dayTime: 30
   news: {fileID: 11400000, guid: e240f44330e516d41a64d09bfb060245, type: 2}
   ruleDescription: 

@@ -47,6 +47,10 @@ public class SpecialNpcSO : ScriptableObject
     [Tooltip("가족관계입니다.")]
     public string[] family;
 
+    [TextArea(2, 5)]
+    [Tooltip("병원 내역/병명입니다. 비어 있거나 없음이면 진단서를 제출하지 않습니다.")]
+    public string psychiatricHistory;
+
     [Header("Documents")]
     [Tooltip("끄면 아래 여권 데이터가 있어도 미제출로 처리됩니다.")]
     public bool carriesPassport = true;
@@ -119,9 +123,11 @@ public class SpecialNpcSO : ScriptableObject
             job = job,
             address = address,
             family = family,
+            psychiatricHistory = NPCData.HasMedicalRecord(psychiatricHistory) ? psychiatricHistory : string.Empty,
             passport = carriesPassport ? CloneDocument(passport) : null,
             entryPermit = carriesEntryPermit ? CloneDocument(entryPermit) : null,
-            medicalCertificate = carriesMedicalCertificate ? CloneDocument(medicalCertificate) : null,
+            medicalCertificate = carriesMedicalCertificate && NPCData.HasMedicalRecord(psychiatricHistory)
+                ? CloneDocument(medicalCertificate) : null,
             useManualDecision = useManualDecision,
             manualShouldApprove = shouldApprove,
             manualDecisionReason = decisionReason,
@@ -130,6 +136,13 @@ public class SpecialNpcSO : ScriptableObject
             approvedFollowUpNews = approvedFollowUpNews,
             rejectedFollowUpNews = rejectedFollowUpNews
         };
+
+        if (npc.entryPermit != null)
+            npc.entryPermit.documentType = DocumentType.EntryPermit;
+        if (npc.passport != null)
+            npc.passport.documentType = DocumentType.Passport;
+        if (npc.medicalCertificate != null)
+            npc.medicalCertificate.documentType = DocumentType.MedicalCertificate;
 
         FillDocumentFromNpc(npc.passport, npc, currentDate);
         FillDocumentFromNpc(npc.entryPermit, npc, currentDate);

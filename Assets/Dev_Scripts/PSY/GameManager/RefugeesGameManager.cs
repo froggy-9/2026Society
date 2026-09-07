@@ -23,6 +23,9 @@ public class RefugeesGameManager : MonoBehaviour
 
     public int InspectedNpcCount { get; private set; }
 
+    public int MaxInspectionCount => dayManager != null && dayManager.CurrentDayData != null
+        ? Mathf.Max(1, dayManager.CurrentDayData.maxInspectionCount) : 1;
+
     private GameState previousState;
     private bool startMapShown;
 
@@ -116,7 +119,7 @@ public class RefugeesGameManager : MonoBehaviour
 
     public void SubmitJudgement(bool playerApproved, bool npcShouldBeApproved, NPCData npc = null, string reason = "")
     {
-        if (CurrentState != GameState.Inspection)
+        if (CurrentState != GameState.Inspection || InspectedNpcCount >= MaxInspectionCount)
             return;
 
         if (evaluationManager == null)
@@ -132,6 +135,9 @@ public class RefugeesGameManager : MonoBehaviour
         );
 
         JudgementSubmitted?.Invoke();
+
+        if (InspectedNpcCount >= MaxInspectionCount)
+            EndDay();
     }
 
     public void EndDay()
@@ -150,12 +156,6 @@ public class RefugeesGameManager : MonoBehaviour
             dayManager.Quota
         );
 
-        if (evaluationManager.IsGameOver())
-        {
-            GoToGameOver();
-            return;
-        }
-
         SetState(GameState.Result);
     }
 
@@ -163,6 +163,12 @@ public class RefugeesGameManager : MonoBehaviour
     {
         if (CurrentState != GameState.Result)
             return;
+
+        if (evaluationManager != null && evaluationManager.IsGameOver())
+        {
+            GoToGameOver();
+            return;
+        }
 
         if (CurrentDay >= maxDay)
         {
@@ -197,7 +203,7 @@ public class RefugeesGameManager : MonoBehaviour
 
     public bool CanSpawnNpc()
     {
-        return CurrentState == GameState.Inspection;
+        return CurrentState == GameState.Inspection && InspectedNpcCount < MaxInspectionCount;
     }
 
     public NewsSO GetCurrentNews()
