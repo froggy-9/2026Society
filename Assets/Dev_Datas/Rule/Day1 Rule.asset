@@ -14,6 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RuleSO
   ruleID: 1
   ruleName: Day1
-  description: "[기본 심사 사항]\n\n1. 본인 확인\n입국 신청자의 얼굴과 여권에 부착된 사진을 대조한다.\n본인으로 확인되지 않을 경우 입국을 불허한다.\n\n2. 국가 코드 확인\n입국 서류에 기재된 국가 코드와 여권의 국가 코드를 대조한다.\n두 정보가 일치하지 않을 경우 입국을 불허한다.\n\n3. 여권 유효기간 확인\n여권에 기재된 만료일을 확인한다.\n심사일을 기준으로 유효기간이 지난 여권은 인정하지 않는다.\n\n[심사관 유의사항]\n모든 항목은 개별적으로 확인하며, 한 항목이라도 입국 기준을 충족하지 못할 경우 입국을 불허한다."
-  checkTypes: 010000000200000004000000140000000f000000
+  description: "[\uAE30\uBCF8 \uC2EC\uC0AC \uC0AC\uD56D]\r\n\r\n1. \uC5EC\uAD8C,
+    \uC785\uAD6D \uC2E0\uACE0\uC11C \uC81C\uCD9C \uD655\uC778\r\n\uC5EC\uAD8C\uACFC
+    \uC785\uAD6D \uC2E0\uACE0\uC11C\uB97C \uBAA8\uB450 \uC81C\uCD9C\uD574\uC57C \uD558\uBA70,
+    \uB458 \uC911 \uD558\uB098\uB77C\uB3C4 \uC81C\uCD9C\uD558\uC9C0 \uC54A\uC744
+    \uACBD\uC6B0 \uC785\uAD6D\uC744 \uBD88\uD5C8\uD55C\uB2E4.\r\n\r\n2. \uBCF8\uC778
+    \uD655\uC778\r\n\uC785\uAD6D \uC2E0\uCCAD\uC790\uC758 \uC5BC\uAD74\uACFC \uC5EC\uAD8C\uC5D0
+    \uBD80\uCC29\uB41C \uC0AC\uC9C4\uC744 \uB300\uC870\uD55C\uB2E4.\r\n\uBCF8\uC778\uC73C\uB85C
+    \uD655\uC778\uB418\uC9C0 \uC54A\uC744 \uACBD\uC6B0 \uC785\uAD6D\uC744 \uBD88\uD5C8\uD55C\uB2E4.\r\n\r\n3.
+    \uC5EC\uAD8C\uACFC \uC785\uAD6D \uC2E0\uACE0\uC11C \uC77C\uCE58 \uD655\uC778\r\n\uC5EC\uAD8C\uACFC
+    \uC785\uAD6D \uC2E0\uACE0\uC11C\uC758 \uB370\uC774\uD130\uAC00 \uC77C\uCE58\uD558\uC9C0
+    \uC54A\uC744 \uACBD\uC6B0 \uC785\uAD6D\uC744 \uBD88\uD5C8\uD55C\uB2E4.\r\n\r\n4.
+    \uC5EC\uAD8C \uC720\uD6A8\uAE30\uAC04 \uD655\uC778\r\n\uC5EC\uAD8C\uC5D0 \uAE30\uC7AC\uB41C
+    \uB9CC\uB8CC\uC77C\uC744 \uD655\uC778\uD55C\uB2E4.\r\n\uC2EC\uC0AC\uC77C\uC744
+    \uAE30\uC900\uC73C\uB85C \uC720\uD6A8\uAE30\uAC04\uC774 \uC9C0\uB09C \uC5EC\uAD8C\uC740
+    \uC778\uC815\uD558\uC9C0 \uC54A\uB294\uB2E4."
+  checkTypes: 010000000200000004000000150000000f000000
+  bannedNationalities: []
+  inspectedOccupations: []
   checkType: 0

@@ -32,8 +32,8 @@ public class RefugeesGameUI : MonoBehaviour
     [Tooltip("DayUI 안에서 현재 일차를 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text dayIntroText;
 
-    [Tooltip("DayUI에 한 글자씩 표시할 문장 형식입니다. {0} 자리에 현재 일차가 들어갑니다. 예: DAY {0}")]
-    [SerializeField] private string dayIntroTextFormat = "DAY {0}";
+    [Tooltip("DayUI에 한 글자씩 표시할 문장 형식입니다. {0} 자리에 현재 일차가 들어갑니다. 예: Day {0}")]
+    [SerializeField] private string dayIntroTextFormat = "Day {0}";
 
     [Tooltip("DayUI가 처음 켜질 때 서서히 나타나는 시간입니다.")]
     [SerializeField] private float dayIntroFadeInDuration = 0.65f;
@@ -110,10 +110,13 @@ public class RefugeesGameUI : MonoBehaviour
     [Tooltip("현재 일차를 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text dayText;
 
+    [Tooltip("현재 일차 DaySO의 Current Date를 표시할 TMP 텍스트입니다.")]
+    [SerializeField] private TMP_Text dateText;
+
     [Tooltip("남은 제한시간을 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text timerText;
 
-    [Tooltip("현재 심사 수 / 목표 심사 수를 표시할 TMP 텍스트입니다.")]
+    [Tooltip("선별한 난민 수와 DaySO의 하루 최대 심사 인원을 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text quotaText;
 
     private RefugeesGameManager gameManager;
@@ -276,6 +279,10 @@ public class RefugeesGameUI : MonoBehaviour
         bool showNews = state == GameState.News;
         bool showDayIntro = state == GameState.DayIntro;
         bool showStartMap = state == GameState.StartMap;
+        bool keepResultUntilDayIntro = showDayIntro
+            && dayIntroPanel != null
+            && resultPanel != null
+            && resultPanel.activeSelf;
 
         if (showNews)
         {
@@ -289,7 +296,8 @@ public class RefugeesGameUI : MonoBehaviour
             FadeOutPanel(newsPanel, newsPopupMotionRoot);
 
         SetActive(inspectionPanel, state == GameState.Inspection);
-        SetActive(resultPanel, state == GameState.Result);
+        if (!keepResultUntilDayIntro)
+            SetActive(resultPanel, state == GameState.Result);
 
         if (showStartMap)
             SetActive(startMapPanel, true);
@@ -309,7 +317,12 @@ public class RefugeesGameUI : MonoBehaviour
         RefreshAll();
 
         if (showDayIntro)
-            PlayDayIntro();
+        {
+            PlayDayIntro(keepResultUntilDayIntro);
+
+            if (keepResultUntilDayIntro)
+                FadeOutPanel(resultPanel);
+        }
         else if (dayIntroPanel != null && dayIntroPanel.activeSelf)
             FadeOutPanel(dayIntroPanel);
 
@@ -328,7 +341,7 @@ public class RefugeesGameUI : MonoBehaviour
             dailyEvaluationView?.Show(gameManager);
             PlayPanelOpenMotion(resultPanel, null, resultStartOffset);
         }
-        else
+        else if (!keepResultUntilDayIntro)
             dailyEvaluationView?.Hide();
 
         if (state == GameState.Ending)
@@ -364,11 +377,12 @@ public class RefugeesGameUI : MonoBehaviour
 
         DayDataSO dayData = gameManager.GetCurrentDayData();
 
-        SetText(dayText, $"DAY {gameManager.CurrentDay}");
+        SetText(dayText, $"Day {gameManager.CurrentDay}");
+        SetText(dateText, dayData != null ? dayData.currentDate : string.Empty);
         SetText(timerText, FormatTime(gameManager.RemainingTime));
 
         if (dayData != null)
-            SetText(quotaText, $"{gameManager.InspectedNpcCount} / {gameManager.MaxInspectionCount}");
+            SetText(quotaText, $"선별한 난민 수: {gameManager.InspectedNpcCount} / {gameManager.MaxInspectionCount}");
     }
 
     private static string FormatTime(float seconds)
@@ -490,15 +504,15 @@ public class RefugeesGameUI : MonoBehaviour
         SetActive(mainUiPanel, visible);
     }
 
-    private void PlayDayIntro()
+    private void PlayDayIntro(bool keepResultVisible = false)
     {
         if (dayIntroRoutine != null)
             StopCoroutine(dayIntroRoutine);
 
-        dayIntroRoutine = StartCoroutine(AnimateDayIntro());
+        dayIntroRoutine = StartCoroutine(AnimateDayIntro(keepResultVisible));
     }
 
-    private IEnumerator AnimateDayIntro()
+    private IEnumerator AnimateDayIntro(bool keepResultVisible)
     {
         if (dayIntroPanel == null)
         {
@@ -512,7 +526,8 @@ public class RefugeesGameUI : MonoBehaviour
         SetActive(newsPanel, false);
         SetActive(rulePanel, false);
         SetActive(inspectionPanel, false);
-        SetActive(resultPanel, false);
+        if (!keepResultVisible)
+            SetActive(resultPanel, false);
         SetActive(startMapPanel, false);
         SetMainUiVisible(false);
 

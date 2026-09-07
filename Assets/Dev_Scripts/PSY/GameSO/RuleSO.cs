@@ -18,7 +18,8 @@ public enum RuleCheckType
     PassportNotExpired = 15,
     NoCriminalRecord = 17,
     NationalityAllowed = 19,
-    NationalityMatch = 20
+    NationalityMatch = 20,
+    PassportEntryDataMatch = 21
 }
 
 [CreateAssetMenu(menuName = "Refugees/Rule")]

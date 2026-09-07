@@ -131,7 +131,8 @@ public class RefugeesGameManager : MonoBehaviour
             playerApproved,
             npcShouldBeApproved,
             npc,
-            reason
+            reason,
+            CurrentDay
         );
 
         JudgementSubmitted?.Invoke();

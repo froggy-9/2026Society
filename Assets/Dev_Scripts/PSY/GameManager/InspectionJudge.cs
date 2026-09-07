@@ -60,8 +60,11 @@ public static class InspectionJudge
             case RuleCheckType.EntryPermitRequired:
                 return permit != null;
 
+            case RuleCheckType.PassportEntryDataMatch:
+                return PassportEntryDataMatches(passport, permit);
+
             case RuleCheckType.PortraitMatch:
-                return passport != null && npc.portrait == passport.portrait;
+                return passport != null && npc.passportPhotoMatchesNpc;
 
             case RuleCheckType.NameMatch:
                 return TextMatches(npc.englishSurname, passport?.englishSurname, permit?.englishSurname, medicalCertificate?.englishSurname)
@@ -159,6 +162,20 @@ public static class InspectionJudge
             return false;
 
         return expiry.Date >= today.Date;
+    }
+
+    private static bool PassportEntryDataMatches(DocumentData passport, DocumentData permit)
+    {
+        return passport != null
+            && permit != null
+            && IsSameText(passport.passportCode, permit.passportCode)
+            && IsSameText(passport.englishSurname, permit.englishSurname)
+            && IsSameText(passport.englishGivenNames, permit.englishGivenNames)
+            && IsSameText(passport.nationality, permit.nationality)
+            && IsSameText(passport.dateOfBirth, permit.dateOfBirth)
+            && passport.age > 0
+            && passport.age == permit.age
+            && passport.gender == permit.gender;
     }
 
     private static bool TextMatches(params string[] values)

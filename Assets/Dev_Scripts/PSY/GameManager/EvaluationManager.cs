@@ -96,7 +96,7 @@ public class EvaluationManager : MonoBehaviour
 
     public void ResetGame()
     {
-        OwnedPerformanceMoney = 0;
+        OwnedPerformanceMoney = config != null ? Mathf.Max(0, config.startingPerformanceMoney) : 60;
         CumulativeCorrectCount = 0;
         CumulativeWrongAcceptCount = 0;
         CumulativeWrongRejectCount = 0;
@@ -107,7 +107,8 @@ public class EvaluationManager : MonoBehaviour
         bool playerApproved,
         bool npcShouldBeApproved,
         NPCData npc = null,
-        string reason = ""
+        string reason = "",
+        int currentDay = 1
     )
     {
         if (playerApproved)
@@ -116,7 +117,7 @@ public class EvaluationManager : MonoBehaviour
             DeniedCount++;
 
         bool isCorrect = playerApproved == npcShouldBeApproved;
-        int performanceMoney = CalculateJudgementPerformanceMoney(isCorrect);
+        int performanceMoney = CalculateJudgementPerformanceMoney(isCorrect, currentDay);
 
         if (isCorrect)
             CumulativeCorrectCount++;
@@ -216,7 +217,7 @@ public class EvaluationManager : MonoBehaviour
         return config != null ? config.GetEndingNewsContent(endingType) : null;
     }
 
-    private int CalculateJudgementPerformanceMoney(bool isCorrect)
+    private int CalculateJudgementPerformanceMoney(bool isCorrect, int currentDay)
     {
         if (isCorrect)
         {
@@ -230,7 +231,12 @@ public class EvaluationManager : MonoBehaviour
         WrongCombo++;
         CorrectCombo = 0;
 
-        return -GetWrongBasePenalty() - (WrongCombo - 1) * GetWrongStreakPenaltyStep();
+        int penalty = GetWrongBasePenalty() + (WrongCombo - 1) * GetWrongStreakPenaltyStep();
+
+        if (config != null && currentDay == config.finalDayNumber)
+            penalty += config.finalDayWrongSelectionPenalty;
+
+        return -penalty;
     }
 
     private SettlementGrade GetSettlementGrade(int ownedPerformanceMoney)

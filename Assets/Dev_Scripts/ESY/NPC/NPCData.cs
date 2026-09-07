@@ -24,6 +24,9 @@ public class NPCData
     public Gender gender;
     public int age;
     public Sprite portrait;
+
+    [Tooltip("화면의 NPC와 여권 사진이 같은 인물인지 나타냅니다. 오류가 있는 일반 NPC는 false가 됩니다.")]
+    public bool passportPhotoMatchesNpc = true;
     public string nationality;
     public string dateOfBirth;
 

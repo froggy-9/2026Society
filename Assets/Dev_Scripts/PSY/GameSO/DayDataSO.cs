@@ -71,18 +71,21 @@ public class DayDataSO : ScriptableObject
             switch (reason)
             {
                 case NpcFailReason.MissingPassport: check = RuleCheckType.PassportRequired; break;
+                case NpcFailReason.MissingEntryPermit: check = RuleCheckType.EntryPermitRequired; break;
                 case NpcFailReason.PortraitMismatch: check = RuleCheckType.PortraitMatch; break;
-                case NpcFailReason.NationalityMismatch: check = RuleCheckType.NationalityMatch; break;
+                case NpcFailReason.NationalityMismatch:
+                case NpcFailReason.NameMismatch:
+                case NpcFailReason.GenderMismatch:
+                case NpcFailReason.AgeMismatch:
+                case NpcFailReason.BirthDateMismatch:
+                case NpcFailReason.PassportCodeMismatch:
+                    check = day == 1 ? RuleCheckType.PassportEntryDataMatch : GetExistingMismatchCheck(reason);
+                    break;
                 case NpcFailReason.PassportExpired: check = RuleCheckType.PassportNotExpired; break;
                 case NpcFailReason.BannedNationality: check = RuleCheckType.NationalityAllowed; break;
                 case NpcFailReason.OccupationMismatch: check = RuleCheckType.OccupationMatch; break;
                 case NpcFailReason.CriminalRecord: check = RuleCheckType.NoCriminalRecord; break;
                 case NpcFailReason.DocumentCodeMismatch: check = RuleCheckType.DocumentCodeMatch; break;
-                case NpcFailReason.PassportCodeMismatch: check = RuleCheckType.PassportCodeMatch; break;
-                case NpcFailReason.NameMismatch: check = RuleCheckType.NameMatch; break;
-                case NpcFailReason.GenderMismatch: check = RuleCheckType.GenderMatch; break;
-                case NpcFailReason.AgeMismatch: check = RuleCheckType.AgeMatch; break;
-                case NpcFailReason.BirthDateMismatch: check = RuleCheckType.BirthDateMatch; break;
                 default: continue;
             }
 
@@ -91,5 +94,19 @@ public class DayDataSO : ScriptableObject
         }
 
         return checks.ToArray();
+    }
+
+    private static RuleCheckType GetExistingMismatchCheck(NpcFailReason reason)
+    {
+        return reason switch
+        {
+            NpcFailReason.NationalityMismatch => RuleCheckType.NationalityMatch,
+            NpcFailReason.NameMismatch => RuleCheckType.NameMatch,
+            NpcFailReason.GenderMismatch => RuleCheckType.GenderMatch,
+            NpcFailReason.AgeMismatch => RuleCheckType.AgeMatch,
+            NpcFailReason.BirthDateMismatch => RuleCheckType.BirthDateMatch,
+            NpcFailReason.PassportCodeMismatch => RuleCheckType.PassportCodeMatch,
+            _ => RuleCheckType.None
+        };
     }
 }

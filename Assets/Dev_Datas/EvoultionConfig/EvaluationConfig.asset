@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8757b5d9f77e490493c086b4f2a8d1ed, type: 3}
   m_Name: EvaluationConfig
   m_EditorClassIdentifier: Assembly-CSharp::EvaluationConfigSO
-  correctBaseBonus: 3
-  correctStreakBonusStep: 2
+  startingPerformanceMoney: 60
+  correctBaseBonus: 15
+  correctStreakBonusStep: 5
   wrongBasePenalty: 4
   wrongStreakPenaltyStep: 1
+  finalDayNumber: 4
+  finalDayWrongSelectionPenalty: 10
   rentCost: 40
   foodCost: 15
   heatingCost: 5

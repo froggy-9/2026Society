@@ -88,18 +88,32 @@ public class EndingNewsContent
 )]
 public class EvaluationConfigSO : ScriptableObject
 {
+    [Header("Starting Performance Money")]
+    [Tooltip("새 게임 시작 시 보유 성과금입니다. 첫날 생활비에 바로 게임 오버가 나지 않도록 하는 초기 여유금입니다.")]
+    [Min(0)]
+    public int startingPerformanceMoney = 60;
+
     [Header("Judgement Performance Money")]
     [Tooltip("첫 번째 연속 성공 성과금입니다.")]
-    public int correctBaseBonus = 3;
+    public int correctBaseBonus = 15;
 
     [Tooltip("성공이 연속될 때마다 추가되는 성과금입니다.")]
-    public int correctStreakBonusStep = 2;
+    public int correctStreakBonusStep = 5;
 
     [Tooltip("첫 번째 연속 실패 감점입니다. 양수로 입력하면 실제 계산에서는 음수로 차감됩니다.")]
     public int wrongBasePenalty = 4;
 
     [Tooltip("실패가 연속될 때마다 추가되는 감점입니다.")]
     public int wrongStreakPenaltyStep = 1;
+
+    [Header("Final Day Wrong Selection Penalty")]
+    [Tooltip("추가 차감을 적용할 마지막 일차입니다.")]
+    [Min(1)]
+    public int finalDayNumber = 4;
+
+    [Tooltip("마지막 일차에 잘못 선별할 때마다 추가로 차감되는 성과금입니다. 양수로 입력합니다.")]
+    [Min(0)]
+    public int finalDayWrongSelectionPenalty = 10;
 
     [Header("Daily Living Cost")]
     [Tooltip("하루 종료 시 차감되는 집세입니다.")]

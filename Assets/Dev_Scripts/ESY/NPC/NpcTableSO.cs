@@ -9,7 +9,7 @@ public class NpcPhotoSet
     [Tooltip("화면에 서 있는 NPC 사진입니다.")]
     public Sprite npcPhoto;
 
-    [Tooltip("여권에 들어갈 사진입니다. 정상 NPC라면 npcPhoto와 같은 이미지를 넣으세요.")]
+    [Tooltip("npcPhoto와 같은 인물의 여권용 사진입니다. 화면용 이미지와는 크롭이나 그림이 달라도 됩니다.")]
     public Sprite passportPhoto;
 }
 
@@ -43,7 +43,8 @@ public enum NpcFailReason
     DocumentCodeMismatch = 16,
     NationalityMismatch = 17,
     CriminalRecord = 18,
-    BannedNationality = 19
+    BannedNationality = 19,
+    MissingEntryPermit = 20
 }
 
 [System.Serializable]
@@ -161,7 +162,7 @@ public class NpcTableSO : ScriptableObject
     public string[] expiredMedicalCertificateDates;
 
     [Header("Photo Pairs")]
-    [Tooltip("사진 한 칸 안에 NPC 사진과 여권 사진을 함께 넣습니다.")]
+    [Tooltip("한 칸은 같은 인물의 화면용 NPC 사진과 여권 사진 한 쌍입니다. 정상 NPC는 이 쌍을 사용하고, 오류 NPC는 여권 사진만 다른 쌍에서 가져옵니다.")]
     [FormerlySerializedAs("photos")]
     public NpcPhotoSet[] photoPairs;
 
@@ -261,6 +262,7 @@ public class NpcTableSO : ScriptableObject
         npc.age = GetAgeFromBirthDate(npc.dateOfBirth, currentDate, npc.age);
         NpcPhotoSet photoSet = PickPhotoSet();
         npc.portrait = GetNpcPhoto(photoSet);
+        npc.passportPhotoMatchesNpc = true;
         npc.job = PickWeightedString(weightedJobs, jobs, "None");
         npc.address = Pick(addresses, "Unknown");
         npc.family = new[] { PickWeightedString(weightedFamilyRelationships, familyRelationships, "None") };
@@ -386,6 +388,8 @@ public class NpcTableSO : ScriptableObject
         if (npc == null || failReason == NpcFailReason.None)
             return;
 
+        ApplyInvalidPassportPhoto(npc);
+
         switch (failReason)
         {
             case NpcFailReason.BannedNationality:
@@ -400,6 +404,10 @@ public class NpcTableSO : ScriptableObject
 
             case NpcFailReason.MissingPassport:
                 npc.passport = null;
+                break;
+
+            case NpcFailReason.MissingEntryPermit:
+                npc.entryPermit = null;
                 break;
 
             case NpcFailReason.NationalityMismatch:
@@ -418,8 +426,6 @@ public class NpcTableSO : ScriptableObject
                 break;
 
             case NpcFailReason.PortraitMismatch:
-                if (npc.passport != null)
-                    npc.passport.portrait = PickDifferentPortrait(npc.portrait);
                 break;
 
             case NpcFailReason.NameMismatch:
@@ -464,6 +470,15 @@ public class NpcTableSO : ScriptableObject
                     npc.entryPermit.documentCode = CreateCode("DOC");
                 break;
         }
+    }
+
+    private void ApplyInvalidPassportPhoto(NPCData npc)
+    {
+        if (npc.passport == null || !npc.passportPhotoMatchesNpc)
+            return;
+
+        npc.passport.portrait = PickDifferentPortrait(npc.passport.portrait);
+        npc.passportPhotoMatchesNpc = false;
     }
 
     private void ApplySubmissionChance(NPCData npc)
@@ -618,6 +633,7 @@ public class NpcTableSO : ScriptableObject
         NpcFailReason[] defaults =
         {
             NpcFailReason.MissingPassport,
+            NpcFailReason.MissingEntryPermit,
             NpcFailReason.PortraitMismatch,
             NpcFailReason.NameMismatch,
             NpcFailReason.GenderMismatch,

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -60,18 +61,23 @@ public class DailyEvaluationUI : MonoBehaviour
     [SerializeField] private Button confirmButton;
 
     [Header("Motion")]
-    [Tooltip("결산 문서가 켜질 때 항목들이 순서대로 나타나는 시간 간격입니다.")]
-    [SerializeField] private float revealInterval = 0.07f;
-    [Tooltip("각 항목 페이드 시간입니다.")]
-    [SerializeField] private float revealFadeDuration = 0.45f;
+    [Tooltip("움직이는 값 항목 사이의 간격입니다.")]
+    [SerializeField] private float revealInterval = 0.08f;
+    [Tooltip("각 값 항목이 올라오며 나타나는 시간입니다.")]
+    [SerializeField] private float revealFadeDuration = 0.38f;
+    [Tooltip("값 항목이 시작할 때 아래에서 올라오는 거리입니다.")]
+    [SerializeField] private float revealOffset = 12f;
 
     private RefugeesGameManager gameManager;
     private Coroutine revealRoutine;
-    private Graphic[] revealGraphics;
-    private float[] revealTargetAlphas;
     private static readonly Color NormalValueColor = new Color(0.82f, 0.79f, 0.66f, 1f);
     private static readonly Color PositiveMoneyColor = new Color(0.78f, 0.9f, 0.88f, 1f);
     private static readonly Color NegativeMoneyColor = new Color(0.66f, 0.22f, 0.18f, 1f);
+    private static readonly Color ExcellentStampColor = new Color(0.78f, 0.65f, 0.27f, 1f);
+    private static readonly Color GoodStampColor = new Color(0.60f, 0.69f, 0.39f, 1f);
+    private static readonly Color FairStampColor = new Color(0.39f, 0.65f, 0.58f, 1f);
+    private static readonly Color AverageStampColor = new Color(0.67f, 0.67f, 0.62f, 1f);
+    private static readonly Color PoorStampColor = new Color(0.72f, 0.31f, 0.24f, 1f);
 
     private void Awake()
     {
@@ -142,6 +148,7 @@ public class DailyEvaluationUI : MonoBehaviour
         SetColor(cumulativeScoreText, GetMoneyColor(result.judgementPerformanceMoney));
         SetColor(averageAccuracyText, GetMoneyColor(-result.livingCost));
         SetColor(cumulativeGradeText, GetMoneyColor(result.netChange));
+        SetStampColor(result.gradeLabel);
 
         if (warningRoot != null)
             warningRoot.SetActive(result.wrongCount > 0);
@@ -164,12 +171,6 @@ public class DailyEvaluationUI : MonoBehaviour
 
     private void PlayRevealMotion()
     {
-        if (documentRoot == null)
-            return;
-
-        revealGraphics = documentRoot.GetComponentsInChildren<Graphic>(true);
-        revealTargetAlphas = new float[revealGraphics.Length];
-
         if (revealRoutine != null)
             StopCoroutine(revealRoutine);
 
@@ -178,50 +179,72 @@ public class DailyEvaluationUI : MonoBehaviour
 
     private IEnumerator RevealSequentially()
     {
-        for (int i = 0; i < revealGraphics.Length; i++)
+        List<RectTransform> revealRoots = GetRevealRoots();
+
+        if (confirmButton != null)
+            confirmButton.interactable = false;
+
+        for (int i = 0; i < revealRoots.Count; i++)
         {
-            Graphic graphic = revealGraphics[i];
-
-            if (graphic == null || graphic.transform == documentRoot)
-                continue;
-
-            Color color = graphic.color;
-            revealTargetAlphas[i] = color.a;
-            color.a = 0f;
-            graphic.color = color;
-        }
-
-        for (int i = 0; i < revealGraphics.Length; i++)
-        {
-            Graphic graphic = revealGraphics[i];
-
-            if (graphic == null || graphic.transform == documentRoot)
-                continue;
-
-            float elapsed = 0f;
-            Color startColor = graphic.color;
-            Color endColor = startColor;
-            endColor.a = revealTargetAlphas[i];
-            Vector3 endPosition = graphic.transform.localPosition;
-            Vector3 startPosition = endPosition + new Vector3(0f, -8f, 0f);
-            graphic.transform.localPosition = startPosition;
-
-            while (elapsed < revealFadeDuration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                float t = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, revealFadeDuration));
-                float eased = Mathf.SmoothStep(0f, 1f, t);
-                graphic.color = Color.Lerp(startColor, endColor, eased);
-                graphic.transform.localPosition = Vector3.LerpUnclamped(startPosition, endPosition, eased);
-                yield return null;
-            }
-
-            graphic.color = endColor;
-            graphic.transform.localPosition = endPosition;
+            yield return RevealRoot(revealRoots[i]);
             yield return new WaitForSecondsRealtime(revealInterval);
         }
 
+        if (confirmButton != null)
+            confirmButton.interactable = true;
+
         revealRoutine = null;
+    }
+
+    private IEnumerator RevealRoot(RectTransform root)
+    {
+        if (root == null)
+            yield break;
+
+        CanvasGroup canvasGroup = root.GetComponent<CanvasGroup>();
+
+        if (canvasGroup == null)
+            canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
+
+        Vector2 endPosition = root.anchoredPosition;
+        Vector2 startPosition = endPosition + Vector2.down * revealOffset;
+        canvasGroup.alpha = 0f;
+        root.anchoredPosition = startPosition;
+
+        float elapsed = 0f;
+
+        while (elapsed < revealFadeDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(elapsed / Mathf.Max(0.01f, revealFadeDuration));
+            float eased = Mathf.SmoothStep(0f, 1f, t);
+            canvasGroup.alpha = eased;
+            root.anchoredPosition = Vector2.LerpUnclamped(startPosition, endPosition, eased);
+            yield return null;
+        }
+
+        canvasGroup.alpha = 1f;
+        root.anchoredPosition = endPosition;
+    }
+
+    private List<RectTransform> GetRevealRoots()
+    {
+        var roots = new List<RectTransform>
+        {
+            totalValueText != null ? totalValueText.rectTransform : null,
+            correctValueText != null ? correctValueText.rectTransform : null,
+            wrongValueText != null ? wrongValueText.rectTransform : null,
+            accuracyValueText != null ? accuracyValueText.rectTransform : null,
+            dailyScoreText != null ? dailyScoreText.rectTransform : null,
+            gradeStampText != null ? gradeStampText.rectTransform.parent as RectTransform : null,
+            cumulativeScoreText != null ? cumulativeScoreText.rectTransform : null,
+            averageAccuracyText != null ? averageAccuracyText.rectTransform : null,
+            cumulativeGradeText != null ? cumulativeGradeText.rectTransform : null,
+            confirmButton != null ? confirmButton.transform as RectTransform : null
+        };
+
+        roots.RemoveAll(root => root == null);
+        return roots;
     }
 
     private void ResolveMissingReferences()
@@ -273,6 +296,39 @@ public class DailyEvaluationUI : MonoBehaviour
 
         if (rectTransform != null)
             rectTransform.localEulerAngles = new Vector3(0f, 0f, angle);
+    }
+
+    private void SetStampColor(string gradeLabel)
+    {
+        Color stampColor = gradeLabel switch
+        {
+            "탁월" => ExcellentStampColor,
+            "우수" => GoodStampColor,
+            "양호" => FairStampColor,
+            "보통" => AverageStampColor,
+            _ => PoorStampColor
+        };
+
+        RectTransform stampRoot = gradeStampText != null
+            ? gradeStampText.rectTransform.parent as RectTransform
+            : null;
+
+        if (stampRoot == null)
+            return;
+
+        Image colorBackground = stampRoot.Find("ColorImage")?.GetComponent<Image>();
+
+        if (colorBackground != null)
+        {
+            colorBackground.transform.SetAsFirstSibling();
+            colorBackground.color = new Color(stampColor.r, stampColor.g, stampColor.b, 0.16f);
+        }
+
+        if (gradeStampText != null)
+        {
+            gradeStampText.transform.SetAsLastSibling();
+            gradeStampText.color = stampColor;
+        }
     }
 
     private static void SetText(TMP_Text text, string value)
