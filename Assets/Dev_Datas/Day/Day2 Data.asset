@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DayDataSO
   day: 2
   currentDate: 2050-06-18
-  targetInspectionCount: 11
-  maxInspectionCount: 11
-  dayTime: 30
+  maxInspectionCount: 13
+  dayTime: 840
   news: {fileID: 11400000, guid: e240f44330e516d41a64d09bfb060245, type: 2}
   ruleDescription: 
   rule: {fileID: 11400000, guid: 5d8048bbe9295b941880e251a3fae11b, type: 2}

@@ -19,7 +19,7 @@ MonoBehaviour:
   wrongStreakPenaltyStep: 1
   finalDayNumber: 4
   finalDayWrongSelectionPenalty: 5
-  rentCost: 40
+  rentCost: 50
   foodCost: 15
   heatingCost: 5
   settlementGrades:
@@ -101,7 +101,9 @@ MonoBehaviour:
       \uB300\uC0C1\uC790\uC758 \uC815\uCC29 \uC9C0\uC6D0\uC744 \uD655\uB300\uD558\uACA0\uB2E4\uACE0
       \uBC1D\uD614\uB2E4.\n\n\uAD6D\uACBD \uAC80\uBB38\uC18C\uC758 \uC2EC\uC0AC\uB294
       21\uC77C\uC5D0\uB3C4 \uC608\uC815\uB300\uB85C \uACC4\uC18D\uB41C\uB2E4."
-    images: []
+    images:
+    - {fileID: 21300000, guid: 3ac35161e3f624b4880169caef5746c8, type: 3}
+    - {fileID: 21300000, guid: 0242f8e5f2caba547aaf42758ca54d74, type: 3}
   - endingType: 1
     dateText: "\uBC1C\uD589\uC77C:  2050-06-20"
     dayText: "\uC5D4\uB529\uBD84\uAE30\uC810: \uC778\uB3C4\uC8FC\uC758_  \uC0AC\uD6C4\uAD00\uB9AC"
@@ -159,7 +161,9 @@ MonoBehaviour:
       \uC778\uC811\uAD6D \uBC0F \uAD6D\uC81C\uAE30\uAD6C\uC640 \uD611\uC758\uB97C
       \uAC70\uCCD0 \uD655\uC778\uB41C \uC0AC\uB840\uC5D0 \uB300\uD55C \uD6C4\uC18D
       \uC870\uCE58\uB97C \uC21C\uCC28\uC801\uC73C\uB85C \uC9C4\uD589\uD560 \uC608\uC815\uC774\uB2E4."
-    images: []
+    images:
+    - {fileID: 21300000, guid: eedfa3db5c05e4542870473c0506214a, type: 3}
+    - {fileID: 21300000, guid: 855eafc2637749c458d372b40ed0b4e4, type: 3}
   - endingType: 2
     dateText: "\uBC1C\uD589\uC77C:  2050-06-20"
     dayText: "\uC5D4\uB529\uBD84\uAE30\uC810: \uBD84\uC5F4_  \uD3D0\uC1C4\uC870\uCE58"
@@ -217,4 +221,6 @@ MonoBehaviour:
       \uD588\uB2E4.\n\n\uAD6D\uACBD\uAD00\uB9AC\uAD6D\uC740 \uC774\uB0A0 \uC624\uD6C4
       \uC8FC\uC694 \uAC80\uBB38\uC18C \uC6B4\uC601\uC744 \uC911\uB2E8\uD588\uB2E4.
       \uC7AC\uAC1C \uC2DC\uC810\uC740 \uC815\uD574\uC9C0\uC9C0 \uC54A\uC558\uB2E4."
-    images: []
+    images:
+    - {fileID: 21300000, guid: 9e52850d891d3ad4a9747a72e99446f7, type: 3}
+    - {fileID: 21300000, guid: c266213e5a89c1840b5459d033141fed, type: 3}

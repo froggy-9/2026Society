@@ -17,7 +17,6 @@ public class DayManager : MonoBehaviour
 
     public string CurrentRuleDescription => CurrentDayData != null ? CurrentDayData.ruleDescription : string.Empty;
 
-    public int Quota => CurrentDayData != null ? CurrentDayData.targetInspectionCount : 0;
 
     public float DayTime => CurrentDayData != null ? CurrentDayData.dayTime : 0f;
 

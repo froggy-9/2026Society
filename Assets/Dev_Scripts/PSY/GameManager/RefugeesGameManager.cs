@@ -152,10 +152,7 @@ public class RefugeesGameManager : MonoBehaviour
             return;
         }
 
-        evaluationManager.CalculateResult(
-            InspectedNpcCount,
-            dayManager.Quota
-        );
+        evaluationManager.CalculateResult(InspectedNpcCount);
 
         SetState(GameState.Result);
     }

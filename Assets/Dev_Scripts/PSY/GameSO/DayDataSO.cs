@@ -15,10 +15,6 @@ public class DayDataSO : ScriptableObject
     [Tooltip("Format: yyyy-MM-dd")]
     public string currentDate;
 
-    [FormerlySerializedAs("quota")]
-    [Tooltip("하루 결과 평가용 목표 심사 수입니다. 최대 심사 인원은 Max Inspection Count에서 설정합니다.")]
-    public int targetInspectionCount;
-
     [Min(1)]
     [Tooltip("하루 최대 심사 인원입니다. 승인과 거절을 합산하며 한도에 도달하면 즉시 하루 결과를 표시합니다.")]
     public int maxInspectionCount = 10;

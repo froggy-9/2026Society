@@ -59,7 +59,6 @@ public class EvaluationManager : MonoBehaviour
     public int CorrectCombo { get; private set; }
     public int WrongCombo { get; private set; }
 
-    public int MissedQuotaCount { get; private set; }
     public float Accuracy { get; private set; }
     public IReadOnlyList<InspectionRecord> DayRecords => dayRecords;
     public DailyPerformanceResult LastDailyResult { get; private set; }
@@ -88,7 +87,6 @@ public class EvaluationManager : MonoBehaviour
         WrongDeniedCount = 0;
         CorrectCombo = 0;
         WrongCombo = 0;
-        MissedQuotaCount = 0;
         Accuracy = 0f;
         LastDailyResult = default;
         dayRecords.Clear();
@@ -149,9 +147,8 @@ public class EvaluationManager : MonoBehaviour
         });
     }
 
-    public void CalculateResult(int inspectedCount, int quota)
+    public void CalculateResult(int inspectedCount)
     {
-        MissedQuotaCount = Mathf.Max(0, quota - inspectedCount);
         Accuracy = inspectedCount == 0 ? 0f : (float)CorrectCount / inspectedCount;
 
         SettleDayOnce();
