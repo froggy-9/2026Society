@@ -266,13 +266,14 @@ public class InspectionInteractionUI : MonoBehaviour
 
     private void StorePleaNews(bool approved)
     {
-        if (!waitingForPleaDecision || shownNpc?.Data == null)
+        if (shownNpc?.Data == null)
             return;
 
-        PleaResultLog.Add(approved
+        string followUpNews = approved
             ? shownNpc.Data.approvedFollowUpNews
-            : shownNpc.Data.rejectedFollowUpNews
-        );
+            : shownNpc.Data.rejectedFollowUpNews;
+
+        PleaResultLog.Add(followUpNews);
     }
 
     private void ResetNpcUiState()
