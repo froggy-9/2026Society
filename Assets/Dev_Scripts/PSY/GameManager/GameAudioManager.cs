@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class GameAudioManager : MonoBehaviour
 {
@@ -20,6 +22,11 @@ public class GameAudioManager : MonoBehaviour
 
     [Tooltip("버튼 클릭 등 기본 UI 효과음으로 사용할 클립입니다.")]
     [SerializeField] private AudioClip defaultButtonSfx;
+
+    [Header("BGM Loop")]
+    [Tooltip("0이면 음악 파일 끝까지 기본 루프합니다. 0보다 크면 지정한 초에서 처음으로 돌아가 파일 끝의 무음을 건너뜁니다.")]
+    [Min(0f)]
+    [SerializeField] private float bgmLoopEndTime;
 
     [Header("Initial Volume")]
     [Range(0f, 1f)]
@@ -48,6 +55,17 @@ public class GameAudioManager : MonoBehaviour
 
         if (startBgm != null)
             PlayBgm(startBgm);
+
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+        RegisterSceneButtons();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
     }
 
     public static GameAudioManager GetOrCreate()
@@ -87,8 +105,19 @@ public class GameAudioManager : MonoBehaviour
 
         EnsureSources();
         bgmSource.clip = clip;
-        bgmSource.loop = true;
+        bgmSource.loop = bgmLoopEndTime <= 0f;
         bgmSource.Play();
+    }
+
+    private void Update()
+    {
+        if (bgmLoopEndTime <= 0f || bgmSource == null || bgmSource.clip == null || !bgmSource.isPlaying)
+            return;
+
+        float loopEndTime = Mathf.Min(bgmLoopEndTime, bgmSource.clip.length);
+
+        if (loopEndTime > 0f && bgmSource.time >= loopEndTime)
+            bgmSource.time = 0f;
     }
 
     public void PlaySfx(AudioClip clip)
@@ -105,13 +134,29 @@ public class GameAudioManager : MonoBehaviour
         PlaySfx(defaultButtonSfx);
     }
 
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        RegisterSceneButtons();
+    }
+
+    private void RegisterSceneButtons()
+    {
+        Button[] buttons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        foreach (Button button in buttons)
+        {
+            if (button.GetComponent<ButtonSfxPlayer>() == null)
+                button.gameObject.AddComponent<ButtonSfxPlayer>();
+        }
+    }
+
     private void EnsureSources()
     {
         if (bgmSource == null)
         {
             bgmSource = gameObject.AddComponent<AudioSource>();
             bgmSource.playOnAwake = false;
-            bgmSource.loop = true;
+            bgmSource.loop = bgmLoopEndTime <= 0f;
         }
 
         if (sfxSource == null)
