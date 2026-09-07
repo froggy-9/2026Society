@@ -17,7 +17,7 @@ MonoBehaviour:
   targetInspectionCount: 12
   maxInspectionCount: 12
   dayTime: 30
-  news: {fileID: 11400000, guid: e240f44330e516d41a64d09bfb060245, type: 2}
+  news: {fileID: 11400000, guid: f2a79bbf28db88c4a8d6f5e0b8e335d8, type: 2}
   ruleDescription: 
   rule: {fileID: 11400000, guid: 559423897aa64604da011ddf6bf34eb7, type: 2}
   npcTable: {fileID: 11400000, guid: aeea35ca5fa97d74f8ca367ba7b6b306, type: 2}

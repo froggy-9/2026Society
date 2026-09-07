@@ -106,6 +106,9 @@ public class RefugeesGameUI : MonoBehaviour
     [Tooltip("팝업이 닫힐 때 서서히 사라지는 시간입니다.")]
     [SerializeField] private float panelFadeOutDuration = 0.75f;
 
+    [Tooltip("결산에서 다음 일차 화면으로 넘어갈 때 검정 배경을 유지하는 시간입니다.")]
+    [SerializeField] private float resultBackgroundHoldDuration = 0.35f;
+
     [Header("Inspection HUD")]
     [Tooltip("현재 일차를 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text dayText;
@@ -125,6 +128,7 @@ public class RefugeesGameUI : MonoBehaviour
     private bool showingStartRule;
     private int ignoreOutsideClickUntilFrame = -1;
     private Coroutine dayIntroRoutine;
+    private Coroutine resultHandoffRoutine;
     private readonly Dictionary<RectTransform, Vector2> panelBasePositions = new Dictionary<RectTransform, Vector2>();
     private readonly Dictionary<GameObject, Coroutine> panelMotionRoutines = new Dictionary<GameObject, Coroutine>();
 
@@ -321,7 +325,7 @@ public class RefugeesGameUI : MonoBehaviour
             PlayDayIntro(keepResultUntilDayIntro);
 
             if (keepResultUntilDayIntro)
-                FadeOutPanel(resultPanel);
+                FadeOutResultAfterDayIntroStarts();
         }
         else if (dayIntroPanel != null && dayIntroPanel.activeSelf)
             FadeOutPanel(dayIntroPanel);
@@ -434,6 +438,24 @@ public class RefugeesGameUI : MonoBehaviour
 
         RectTransform fadeTarget = motionRoot != null ? motionRoot : panel.GetComponent<RectTransform>();
         panelMotionRoutines[panel] = StartCoroutine(AnimatePanelFadeOut(panel, fadeTarget));
+    }
+
+    private void FadeOutResultAfterDayIntroStarts()
+    {
+        if (resultHandoffRoutine != null)
+            StopCoroutine(resultHandoffRoutine);
+
+        resultHandoffRoutine = StartCoroutine(DelayResultFadeOut());
+    }
+
+    private IEnumerator DelayResultFadeOut()
+    {
+        yield return new WaitForSecondsRealtime(Mathf.Max(0f, resultBackgroundHoldDuration));
+
+        if (resultPanel != null && resultPanel.activeSelf)
+            FadeOutPanel(resultPanel);
+
+        resultHandoffRoutine = null;
     }
 
     private IEnumerator AnimatePanelOpen(GameObject panel, RectTransform rectTransform, Vector2 startOffset)

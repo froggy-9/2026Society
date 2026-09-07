@@ -69,6 +69,7 @@ public class EndingNewsUI : MonoBehaviour
     private Coroutine motionRoutine;
     private Vector2 basePosition;
     private bool hasBasePosition;
+    private bool isShowing;
     private readonly System.Collections.Generic.Dictionary<RectTransform, float> textBaseHeights = new System.Collections.Generic.Dictionary<RectTransform, float>();
 
     private void Awake()
@@ -79,7 +80,8 @@ public class EndingNewsUI : MonoBehaviour
         if (newspaperRoot == null)
             newspaperRoot = transform as RectTransform;
 
-        Hide();
+        if (!isShowing)
+            Hide();
     }
 
     private void OnEnable()
@@ -96,8 +98,14 @@ public class EndingNewsUI : MonoBehaviour
 
     public void Show(RefugeesEndingType endingType, EndingNewsContent content)
     {
+        // Set before activation: the first activation invokes Awake synchronously.
+        isShowing = true;
+
         if (panelRoot != null)
             panelRoot.SetActive(true);
+
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
 
         if (newspaperRoot != null && !hasBasePosition)
         {
@@ -127,6 +135,14 @@ public class EndingNewsUI : MonoBehaviour
 
     public void Hide()
     {
+        isShowing = false;
+
+        if (motionRoutine != null)
+        {
+            StopCoroutine(motionRoutine);
+            motionRoutine = null;
+        }
+
         if (panelRoot != null)
             panelRoot.SetActive(false);
     }
