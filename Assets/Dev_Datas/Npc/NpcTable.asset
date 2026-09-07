@@ -46,24 +46,82 @@ MonoBehaviour:
   koreanNames:
   - "\uC0CC\uB354\uC2A4"
   englishSurnames:
-  - 
+  - Arven
+  - Daren
+  - Eren
+  - Farel
+  - Loren
+  - Maren
+  - Orven
+  - Soren
+  - Varen
+  - Zaren
   englishGivenNames:
-  - 
+  - Adrian
+  - Clara
+  - Daniel
+  - Elise
+  - Julian
+  - Leon
+  - Nadia
+  - Milan
+  - Sofia
+  - Viktor
   genders: 0000000001000000
   ages: 
   minAge: 18
   maxAge: 70
   birthDates:
-  - 2035-04-28
+  - 2017-05-02
+  - 2027-07-01
+  - 2023-04-30
+  - 2029-10-29
+  - 2020-09-07
+  - 2023-01-26
+  - 2023-08-17
+  - 2029-09-12
+  - 2026-07-30
+  - 2021-06-20
   nationalities:
-  - Korea
+  - "\uC170\uB9AC\uC544"
+  - "\uCE74\uBD88\uB780"
+  - "\uC0AC\uB518"
   jobs:
-  - Doctor
+  - "\uC758\uC0AC"
+  - "\uC57D\uC0AC"
+  - "\uD30C\uC77C\uB7FF"
+  - "\uBC14\uB9AC\uC2A4\uD0C0"
+  - "\uC2E4\uC9C1\uC790"
+  - "\uB18D\uBD80"
+  - "\uAC80\uC0AC"
+  - "\uACF5\uBB34\uC6D0"
+  - "\uC0AC\uC5C5\uAC00"
   addresses:
-  - "\uB9AC\uBE44\uC544 \uC6B0\uBC14\uB9AC"
+  - "\uC170\uB9AC\uC544 \uC544\uB974\uBCA8"
+  - "\uC170\uB9AC\uC544 \uC138\uB974\uBC18"
+  - "\uC170\uB9AC\uC544 \uB77C\uBE44\uC5D4"
+  - "\uCE74\uBD88\uB780 \uB2E4\uB974\uCE78"
+  - "\uCE74\uBD88\uB780 \uC0AC\uD558\uB974"
+  - "\uCE74\uBD88\uB780 \uB098\uC9C0\uB974"
+  - "\uC0AC\uB518 \uC5D0\uB378"
+  - "\uC0AC\uB518 \uB3C4\uBCA8"
+  - "\uC0AC\uB518 \uBAA8\uB80C"
   familyRelationships:
-  - 
-  medicalHistories: []
+  - "\uC5C6\uC74C"
+  - "\uC5B4\uBA38\uB2C8, \uC544\uBC84\uC9C0"
+  - "\uB3D9\uC0DD1"
+  - "\uC57D\uD63C\uC790"
+  - "\uD560\uBA38\uB2C8, \uD560\uC544\uBC84\uC9C0"
+  - "\uC5B4\uBA38\uB2C8, \uB3D9\uC0DD 2"
+  - "\uC544\uBC84\uC9C0, \uD560\uC544\uBC84\uC9C0"
+  - "\uC57D\uD63C\uC790, \uC544\uBC84\uC9C0"
+  - "\uD615 1"
+  medicalHistories:
+  - "\uACF5\uD669\uC7A5\uC560"
+  - "\uC6B0\uC6B8\uC99D"
+  - "\uBD84\uB178\uC870\uC808 \uC7A5\uC560"
+  - "\uC591\uADF9\uC131 \uC7A5\uC560"
+  - "\uC5C6\uC74C"
   passportNumbers:
   - M48038185
   - S57630379
@@ -76,17 +134,68 @@ MonoBehaviour:
   - T19384726
   - M72918453
   passportIssueDates:
-  - 
+  - 2045-11-03
+  - 2040-06-20
+  - 2047-09-13
+  - 2041-09-30
+  - 2046-03-19
+  - 2046-01-12
+  - 2042-02-04
+  - 2044-09-12
+  - 2043-04-09
+  - 2040-09-08
   passportExpiryDates:
-  - 
+  - 2059-11-03
+  - 2050-06-20
+  - 2057-09-13
+  - 2051-09-30
+  - 2056-03-19
+  - 2050-01-12
+  - 2060-02-04
+  - 2054-09-12
+  - 2053-04-09
+  - 2050-09-08
   expiredPassportExpiryDates:
-  - 
+  - 2049-11-03
+  - 2049-01-07
+  - 2049-09-04
+  - 2048-02-19
+  - 2047-05-29
   issuingAuthorities:
   - 
-  medicalRegistrationNumbers: []
-  medicalCertificateDates: []
-  medicalCertificateValidUntilDates: []
-  expiredMedicalCertificateDates: []
+  medicalRegistrationNumbers:
+  - 9893803
+  - 3726237
+  - 1563862
+  - 5356713
+  - 7346061
+  - 5861940
+  - 8381478
+  - 6867489
+  medicalCertificateDates:
+  - 2048.03.01
+  - 2048.03.30
+  - 2048.02.20
+  - 2048.04.02
+  - 2048.04.24
+  - 2048.02.28
+  - 2048.07.08
+  - 2048.09.23
+  medicalCertificateValidUntilDates:
+  - 2050.11.23
+  - 2050.04.28
+  - 2051.06.24
+  - 2050.06.02
+  - 2051.04.20
+  - 2050.05.30
+  - 2050.05.01
+  - 2051.08.24
+  expiredMedicalCertificateDates:
+  - 2049.07.08
+  - 2049.09.25
+  - 2049.02.14
+  - 2049.06.30
+  - 2049.01.29
   photoPairs:
   - npcPhoto: {fileID: 21300000, guid: a07e57b231ec91744aede1e8f62a881c, type: 3}
     passportPhoto: {fileID: 21300000, guid: 52d36fe271f2fb842bf4ac07268787b9, type: 3}
@@ -118,3 +227,16 @@ MonoBehaviour:
   medicalHistoryChance: 0.2
   medicalCertificateSubmissionChance: 1
   failReasonWeights: []
+  additionalErrorChance: 0
+  maxFailReasonsPerNpc: 1
+  weightedGenders: []
+  weightedNationalities: []
+  weightedJobs: []
+  weightedFamilyRelationships: []
+  weightedMedicalHistories: []
+  weightedPassportNumbers: []
+  weightedPassportIssueDates: []
+  weightedPassportExpiryDates: []
+  weightedMedicalRegistrationNumbers: []
+  weightedMedicalCertificateDates: []
+  weightedMedicalCertificateValidUntilDates: []
