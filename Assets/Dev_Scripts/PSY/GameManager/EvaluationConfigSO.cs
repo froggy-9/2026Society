@@ -28,12 +28,39 @@ public class PerformanceGrade
 }
 
 [System.Serializable]
+public class SettlementGrade
+{
+    [Tooltip("보유 성과금에 따라 결과 도장에 표시할 등급명입니다.")]
+    public string label = "양호";
+
+    [Tooltip("이 등급에 필요한 최소 보유 성과금입니다.")]
+    public int minimumOwnedPerformanceMoney = 40;
+
+    [Tooltip("결산 화면 경고/안내 영역에 표시할 문구입니다.")]
+    [TextArea(2, 4)]
+    public string comment;
+}
+
+[System.Serializable]
 public class EndingNewsContent
 {
     [Tooltip("이 뉴스가 어느 엔딩에서 출력될지입니다.")]
     public RefugeesEndingType endingType;
 
-    [Tooltip("엔딩 뉴스 상단 작은 텍스트입니다. 예: 최종 보도 · 존손")]
+    [Header("Newspaper Text")]
+    [Tooltip("엔딩 신문 상단 날짜 칸에 들어갈 텍스트입니다.")]
+    public string dateText;
+
+    [Tooltip("엔딩 신문 상단 일차/최종 표기 칸에 들어갈 텍스트입니다. 예: FINAL")]
+    public string dayText;
+
+    [Tooltip("엔딩 신문 기자/발행처 칸에 들어갈 텍스트입니다.")]
+    public string reporterText;
+
+    [Tooltip("엔딩 신문 분류/표지 칸에 들어갈 텍스트입니다. 비워두면 아래 Meta Text를 사용합니다.")]
+    public string articleLabelText;
+
+    [Tooltip("기존 데이터 호환용 상단 작은 텍스트입니다. 새 UI에서는 Article Label Text가 비어 있을 때 사용합니다.")]
     public string metaText;
 
     [Tooltip("엔딩 뉴스 헤드라인입니다.")]
@@ -45,6 +72,14 @@ public class EndingNewsContent
 
     [Tooltip("엔딩 뉴스에 표시할 이미지 목록입니다.")]
     public Sprite[] images;
+
+    public string GetArticleLabelText()
+    {
+        if (!string.IsNullOrWhiteSpace(articleLabelText))
+            return articleLabelText;
+
+        return metaText;
+    }
 }
 
 [CreateAssetMenu(
@@ -53,10 +88,41 @@ public class EndingNewsContent
 )]
 public class EvaluationConfigSO : ScriptableObject
 {
-    [Header("Daily Bonus")]
-    [Tooltip("정확도 100% 기준 기본 성과금입니다.")]
-    public int baseBonus = 1000;
+    [Header("Judgement Performance Money")]
+    [Tooltip("첫 번째 연속 성공 성과금입니다.")]
+    public int correctBaseBonus = 3;
 
+    [Tooltip("성공이 연속될 때마다 추가되는 성과금입니다.")]
+    public int correctStreakBonusStep = 2;
+
+    [Tooltip("첫 번째 연속 실패 감점입니다. 양수로 입력하면 실제 계산에서는 음수로 차감됩니다.")]
+    public int wrongBasePenalty = 4;
+
+    [Tooltip("실패가 연속될 때마다 추가되는 감점입니다.")]
+    public int wrongStreakPenaltyStep = 1;
+
+    [Header("Daily Living Cost")]
+    [Tooltip("하루 종료 시 차감되는 집세입니다.")]
+    public int rentCost = 40;
+
+    [Tooltip("하루 종료 시 차감되는 식비입니다.")]
+    public int foodCost = 15;
+
+    [Tooltip("하루 종료 시 차감되는 난방비입니다.")]
+    public int heatingCost = 5;
+
+    [Header("Owned Performance Money Grade")]
+    [Tooltip("보유 성과금 기준 등급입니다. 높은 기준 순서로 넣는 것을 권장합니다.")]
+    public SettlementGrade[] settlementGrades =
+    {
+        new SettlementGrade { label = "탁월", minimumOwnedPerformanceMoney = 120, comment = "매우 안정적인 심사 성과가 확인되었습니다." },
+        new SettlementGrade { label = "우수", minimumOwnedPerformanceMoney = 90, comment = "전반적으로 우수한 심사 성과가 확인되었습니다." },
+        new SettlementGrade { label = "양호", minimumOwnedPerformanceMoney = 40, comment = "기본적인 심사 성과가 유지되었습니다." },
+        new SettlementGrade { label = "보통", minimumOwnedPerformanceMoney = 0, comment = "성과금 관리에 주의가 필요합니다." },
+        new SettlementGrade { label = "미흡", minimumOwnedPerformanceMoney = -999999, comment = "보유 성과금이 부족합니다." }
+    };
+
+    [Header("Legacy Accuracy Grade")]
     [Tooltip("정확도에 따른 평가 등급입니다. 높은 정확도 순서로 넣는 것을 권장합니다.")]
     public PerformanceGrade[] grades =
     {
@@ -101,6 +167,50 @@ public class EvaluationConfigSO : ScriptableObject
             body = "입국 가능한 난민들이 반복적으로 거절되며 현장의 반발이 커졌고, 정부는 관리소 폐쇄조치를 발표했다."
         }
     };
+
+    public int GetLivingCostTotal()
+    {
+        return rentCost + foodCost + heatingCost;
+    }
+
+    public SettlementGrade GetSettlementGrade(int ownedPerformanceMoney)
+    {
+        if (settlementGrades == null || settlementGrades.Length == 0)
+            return new SettlementGrade { label = "보통", minimumOwnedPerformanceMoney = 0 };
+
+        SettlementGrade fallback = settlementGrades[settlementGrades.Length - 1];
+
+        for (int i = 0; i < settlementGrades.Length; i++)
+        {
+            SettlementGrade grade = settlementGrades[i];
+
+            if (grade == null)
+                continue;
+
+            if (ownedPerformanceMoney >= grade.minimumOwnedPerformanceMoney)
+                return grade;
+        }
+
+        return fallback;
+    }
+
+    public int GetTopSettlementThreshold()
+    {
+        if (settlementGrades == null || settlementGrades.Length == 0)
+            return 120;
+
+        int top = settlementGrades[0] != null ? settlementGrades[0].minimumOwnedPerformanceMoney : 120;
+
+        for (int i = 1; i < settlementGrades.Length; i++)
+        {
+            SettlementGrade grade = settlementGrades[i];
+
+            if (grade != null)
+                top = Mathf.Max(top, grade.minimumOwnedPerformanceMoney);
+        }
+
+        return Mathf.Max(1, top);
+    }
 
     public PerformanceGrade GetGrade(float accuracy)
     {

@@ -1,127 +1,179 @@
-using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class DocumentViewUI : MonoBehaviour
 {
-    [Tooltip("이 문서 UI에 사용할 문서 양식 SO입니다. 여권이면 Passport 템플릿을 넣습니다.")]
-    [SerializeField] private DocumentTemplateSO template;
+    [Header("Passport")]
+    [Tooltip("여권 큰 문서 루트입니다. NPC가 여권을 제출했을 때만 켜집니다.")]
+    [SerializeField] private GameObject passportRoot;
 
-    [Tooltip("문서 제목이 들어갈 TMP 텍스트입니다.")]
-    [SerializeField] private TMP_Text titleText;
+    [Tooltip("책상 위 작은 여권 루트입니다. 없으면 비워둡니다.")]
+    [SerializeField] private GameObject passportCompactRoot;
 
-    [Tooltip("문서 내용이 들어갈 TMP 텍스트입니다.")]
-    [SerializeField] private TMP_Text bodyText;
+    [SerializeField] private TMP_Text passportNumberText;
+    [SerializeField] private TMP_Text passportSurnameText;
+    [SerializeField] private TMP_Text passportGivenNameText;
+    [SerializeField] private TMP_Text passportNationalityText;
+    [SerializeField] private TMP_Text passportBirthDateText;
+    [SerializeField] private TMP_Text passportIssueDateText;
+    [SerializeField] private TMP_Text passportExpiryDateText;
+    [SerializeField] private Image passportPortraitImage;
 
-    [Tooltip("문서 사진이 들어갈 UI Image입니다. 여권 사진을 보여줄 칸입니다.")]
-    [SerializeField] private Image portraitImage;
 
-    [Tooltip("문서를 닫는 X 버튼입니다.")]
-    [SerializeField] private Button closeButton;
+    [Header("Entry Permit")]
+    [Tooltip("입국 신고서 큰 문서 루트입니다. NPC가 입국 신고서를 제출했을 때만 켜집니다.")]
+    [SerializeField] private GameObject entryPermitRoot;
 
-    private void OnEnable()
+    [Tooltip("책상 위 작은 입국 신고서 루트입니다. 없으면 비워둡니다.")]
+    [SerializeField] private GameObject entryPermitCompactRoot;
+
+    [SerializeField] private TMP_Text entrySurnameText;
+    [SerializeField] private TMP_Text entryGivenNameText;
+    [SerializeField] private TMP_Text entryAgeText;
+    [SerializeField] private TMP_Text entryGenderText;
+    [SerializeField] private TMP_Text entryOccupationText;
+    [SerializeField] private TMP_Text entryResidenceText;
+    [SerializeField] private TMP_Text entryDocumentCodeText;
+    [SerializeField] private TMP_Text entryFamilyRelationshipText;
+    [SerializeField] private TMP_Text entryMedicalHistoryText;
+
+
+    [Header("Medical Certificate")]
+    [Tooltip("진단서 큰 문서 루트입니다. NPC가 진단서를 제출했을 때만 켜집니다.")]
+    [SerializeField] private GameObject medicalCertificateRoot;
+
+    [Tooltip("책상 위 작은 진단서 루트입니다. 없으면 비워둡니다.")]
+    [SerializeField] private GameObject medicalCertificateCompactRoot;
+
+    [SerializeField] private TMP_Text medicalRegistrationNumberText;
+    [SerializeField] private TMP_Text medicalNameText;
+    [SerializeField] private TMP_Text medicalDiagnosisText;
+    [SerializeField] private TMP_Text medicalCertificateDateText;
+    [SerializeField] private TMP_Text medicalValidUntilText;
+
+
+    public void ShowSubmittedDocuments(NPCData npc)
     {
-        if (closeButton != null)
-            closeButton.onClick.AddListener(Close);
-    }
-
-    private void OnDisable()
-    {
-        if (closeButton != null)
-            closeButton.onClick.RemoveListener(Close);
-    }
-
-    public void Show(DocumentData document)
-    {
-        if (document == null)
+        if (npc == null)
         {
             Close();
             return;
         }
 
-        gameObject.SetActive(true);
+        SetRootActive(passportRoot, false);
+        SetRootActive(passportCompactRoot, npc.passport != null);
+        SetRootActive(entryPermitRoot, false);
+        SetRootActive(entryPermitCompactRoot, npc.entryPermit != null);
+        SetRootActive(medicalCertificateRoot, false);
+        SetRootActive(medicalCertificateCompactRoot, npc.medicalCertificate != null);
 
-        if (titleText != null)
-            titleText.text = !string.IsNullOrWhiteSpace(template?.title) ? template.title : document.documentType.ToString();
+        Show(npc.passport);
+        Show(npc.entryPermit);
+        Show(npc.medicalCertificate);
+    }
 
-        if (bodyText != null)
-            bodyText.text = BuildBody(document, template);
+    public void Show(DocumentData document)
+    {
+        if (document == null)
+            return;
 
-        if (portraitImage != null)
+        switch (document.documentType)
         {
-            portraitImage.sprite = document.portrait;
-            portraitImage.enabled = document.portrait != null;
+            case DocumentType.Passport:
+                ShowPassport(document);
+                break;
+
+            case DocumentType.EntryPermit:
+                ShowEntryPermit(document);
+                break;
+
+            case DocumentType.MedicalCertificate:
+                ShowMedicalCertificate(document);
+                break;
         }
     }
 
     public void Close()
     {
-        if (portraitImage != null)
+        SetRootActive(passportRoot, false);
+        SetRootActive(passportCompactRoot, false);
+        SetRootActive(entryPermitRoot, false);
+        SetRootActive(entryPermitCompactRoot, false);
+        SetRootActive(medicalCertificateRoot, false);
+        SetRootActive(medicalCertificateCompactRoot, false);
+    }
+
+
+    private void ShowPassport(DocumentData document)
+    {
+        SetText(passportNumberText, document.passportCode);
+        SetText(passportSurnameText, document.englishSurname);
+        SetText(passportGivenNameText, document.englishGivenNames);
+        SetText(passportNationalityText, document.nationality);
+        SetText(passportBirthDateText, document.dateOfBirth);
+        SetText(passportIssueDateText, document.issueDate);
+        SetText(passportExpiryDateText, document.passportExpiryDate);
+
+        if (passportPortraitImage != null)
         {
-            portraitImage.sprite = null;
-            portraitImage.enabled = false;
+            passportPortraitImage.sprite = document.portrait;
+            passportPortraitImage.enabled = document.portrait != null;
         }
-
-        gameObject.SetActive(false);
     }
 
-    private static string BuildBody(DocumentData document, DocumentTemplateSO template)
+
+    private void ShowEntryPermit(DocumentData document)
     {
-        StringBuilder builder = new StringBuilder();
+        SetText(entrySurnameText, document.englishSurname);
+        SetText(entryGivenNameText, document.englishGivenNames);
 
-        if (template != null && !string.IsNullOrWhiteSpace(template.issuer))
-            builder.AppendLine(template.issuer);
+        SetText(
+            entryAgeText,
+            document.age > 0 ? document.age.ToString() : string.Empty
+        );
 
-        if (document.documentType == DocumentType.Passport)
-        {
-            AddLine(builder, Label(template, template?.passportNumberLabel, "Passport No."), document.passportCode);
-            AddLine(builder, Label(template, template?.surnameLabel, "Surname"), document.englishSurname);
-            AddLine(builder, Label(template, template?.givenNamesLabel, "Given Names"), document.englishGivenNames);
-            AddLine(builder, Label(template, template?.koreanNameLabel, "Name in Korean"), document.koreanName);
-            AddLine(builder, Label(template, template?.nationalityLabel, "Nationality"), document.nationality);
-            AddLine(builder, Label(template, template?.genderLabel, "Sex"), document.gender.ToString());
-            AddLine(builder, Label(template, template?.birthDateLabel, "Date of Birth"), document.dateOfBirth);
-            AddLine(builder, Label(template, template?.issueDateLabel, "Date of Issue"), document.issueDate);
-            AddLine(builder, Label(template, template?.expiryDateLabel, "Date of Expiry"), document.passportExpiryDate);
-            AddLine(builder, Label(template, template?.authorityLabel, "Authority"), document.issuingAuthority);
-        }
-        else
-        {
-            AddLine(builder, Label(template, template?.documentNumberLabel, "Document No."), document.documentCode);
-            AddLine(builder, Label(template, template?.nameLabel, "Name"), document.koreanName);
-            AddLine(builder, Label(template, template?.genderLabel, "Sex"), document.gender.ToString());
-            AddLine(builder, "Age", document.age > 0 ? document.age.ToString() : string.Empty);
-            AddLine(builder, Label(template, template?.occupationLabel, "Occupation"), document.occupation);
-            AddLine(builder, Label(template, template?.residenceLabel, "Residence"), document.residence);
-            AddLine(builder, Label(template, template?.familyLabel, "Family"), document.familyRelationship);
-            AddLine(builder, Label(template, template?.criminalRecordLabel, "Criminal Record"), document.hasCriminalRecord ? document.criminalRecordDetails : NoRecordText(template));
-            AddLine(builder, Label(template, template?.medicalNoteLabel, "Medical Note"), document.psychiatricHistory);
-        }
-
-        return builder.ToString();
+        SetText(entryGenderText, document.gender.ToString());
+        SetText(entryOccupationText, document.occupation);
+        SetText(entryResidenceText, document.residence);
+        SetText(entryDocumentCodeText, document.documentCode);
+        SetText(entryFamilyRelationshipText, document.familyRelationship);
+        SetText(entryMedicalHistoryText, document.psychiatricHistory);
     }
 
-    private static string Label(DocumentTemplateSO template, string label, string fallback)
+
+    private void ShowMedicalCertificate(DocumentData document)
     {
-        return !string.IsNullOrWhiteSpace(label) ? label : fallback;
+        SetText(
+            medicalRegistrationNumberText,
+            document.registrationNumber
+        );
+
+        string fullName =
+            $"{document.englishSurname} {document.englishGivenNames}".Trim();
+
+        SetText(medicalNameText, fullName);
+        SetText(medicalDiagnosisText, document.medicalDiagnosis);
+        SetText(
+            medicalCertificateDateText,
+            document.medicalCertificateDate
+        );
+        SetText(
+            medicalValidUntilText,
+            document.medicalCertificateValidUntil
+        );
     }
 
-    private static string NoRecordText(DocumentTemplateSO template)
-    {
-        if (template != null && !string.IsNullOrWhiteSpace(template.noRecordText))
-            return template.noRecordText;
 
-        return "None";
+    private static void SetText(TMP_Text target, string value)
+    {
+        if (target != null)
+            target.text = value ?? string.Empty;
     }
 
-    private static void AddLine(StringBuilder builder, string label, string value)
+    private static void SetRootActive(GameObject root, bool active)
     {
-        if (string.IsNullOrWhiteSpace(value))
-            return;
-
-        builder.Append(label);
-        builder.Append(": ");
-        builder.AppendLine(value);
+        if (root != null)
+            root.SetActive(active);
     }
 }

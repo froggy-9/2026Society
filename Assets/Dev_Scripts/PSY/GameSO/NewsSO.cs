@@ -11,6 +11,13 @@ public class NewsSO : ScriptableObject
     [Tooltip("몇 일차 뉴스인지 구분하기 위한 값입니다.")]
     public int day;
 
+    [Header("Newspaper Text")]
+    [Tooltip("신문 상단 날짜 칸에 들어갈 텍스트입니다. 예: 2050. 06. 20")]
+    public string dateText;
+
+    [Tooltip("신문 상단 Day 칸에 들어갈 텍스트입니다. 예: Day1_ 신문기사")]
+    public string dayText;
+
     [Tooltip("뉴스 헤드라인 텍스트입니다.")]
     public string title;
 
@@ -36,4 +43,5 @@ public class NewsSO : ScriptableObject
 
         return System.Array.Empty<Sprite>();
     }
+
 }

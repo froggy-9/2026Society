@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    public static event System.Action StateChanged;
+
     [Header("UI")]
     [SerializeField] private GameObject smallPassportUI;
     [SerializeField] private GameObject detailPassportUI;
@@ -20,6 +22,9 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
     private Vector2 smallSize;
     private Vector3 startScale;
     private Transform startParent;
+
+    public bool IsShowingDocument => IsRootActive(smallPassportUI) || IsRootActive(detailPassportUI);
+    public bool IsFolded => !IsShowingDocument || (IsRootActive(smallPassportUI) && !IsRootActive(detailPassportUI));
 
     private void Awake()
     {
@@ -38,6 +43,16 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
 
         smallPassportUI.SetActive(true);
         detailPassportUI.SetActive(false);
+    }
+
+    private void OnEnable()
+    {
+        StateChanged?.Invoke();
+    }
+
+    private void OnDisable()
+    {
+        StateChanged?.Invoke();
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -75,6 +90,7 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             detailPassportUI.SetActive(true);
 
             ApplyDeskScale();
+            StateChanged?.Invoke();
         }
         else
         {
@@ -88,6 +104,7 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             rectTransform.localScale = startScale;
 
             rectTransform.anchoredPosition = startPosition;
+            StateChanged?.Invoke();
         }
     }
 
@@ -147,5 +164,10 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             startScale.y * parentScale.x / parentScale.y,
             startScale.z
         );
+    }
+
+    private static bool IsRootActive(GameObject root)
+    {
+        return root != null && root.activeInHierarchy;
     }
 }

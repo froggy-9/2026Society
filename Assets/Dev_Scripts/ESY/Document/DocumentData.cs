@@ -1,9 +1,11 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum DocumentType
 {
     Passport,
-    EntryPermit
+    EntryPermit,
+    MedicalCertificate
 }
 
 [System.Serializable]
@@ -13,9 +15,16 @@ public class DocumentData
     public DocumentType documentType;
 
     [Header("Person")]
+    [HideInInspector]
+    [FormerlySerializedAs("koreanName")]
     public string koreanName;
+
+    [Tooltip("영문 성입니다. 예: KIM")]
     public string englishSurname;
+
+    [Tooltip("영문 이름입니다. 예: MINJI")]
     public string englishGivenNames;
+
     public Gender gender;
     public int age;
     public Sprite portrait;
@@ -30,6 +39,7 @@ public class DocumentData
     [Header("Codes")]
     public string documentCode;
     public string passportCode;
+    public string registrationNumber;
 
     [Header("Risk")]
     public bool hasCriminalRecord;
@@ -38,10 +48,20 @@ public class DocumentData
     [TextArea(2, 5)]
     public string psychiatricHistory;
 
+    [Tooltip("진단서에 표시할 병명 또는 병원 기록입니다.")]
+    public string medicalDiagnosis;
+
     [Header("Passport")]
     public string issueDate;
     public string issuingAuthority;
 
     [Tooltip("Format: yyyy-MM-dd")]
     public string passportExpiryDate;
+
+    [Header("Medical Certificate")]
+    [Tooltip("진단서 작성일입니다. 형식은 yyyy-MM-dd를 권장합니다.")]
+    public string medicalCertificateDate;
+
+    [Tooltip("진단서 유효기간입니다. 형식은 yyyy-MM-dd를 권장합니다.")]
+    public string medicalCertificateValidUntil;
 }

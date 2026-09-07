@@ -67,8 +67,7 @@ public class NPCSpawner : MonoBehaviour
         }
 
         NPCController newNPC = Instantiate(npcPrefab, npcParent);
-        newNPC.transform.localPosition = spawnPoint.localPosition;
-        newNPC.transform.localRotation = spawnPoint.localRotation;
+        newNPC.PlaceAt(spawnPoint);
 
         newNPC.Initialize(
             npcData,

@@ -30,6 +30,21 @@ public class NPCController : MonoBehaviour
     public NPCData Data => npcData;
     public bool IsReady { get; private set; }
 
+    public void PlaceAt(Transform point)
+    {
+        if (point == null)
+            return;
+
+        bool useLocal = point.parent != null && point.parent == transform.parent;
+
+        if (useLocal)
+            transform.localPosition = point.localPosition;
+        else
+            transform.position = point.position;
+
+        transform.rotation = point.rotation;
+    }
+
     public void Initialize(
         NPCData npcData,
         Transform waitPoint,

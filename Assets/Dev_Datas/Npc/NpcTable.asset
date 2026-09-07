@@ -13,8 +13,35 @@ MonoBehaviour:
   m_Name: NpcTable
   m_EditorClassIdentifier: Assembly-CSharp::NpcTableSO
   namePairs:
-  - koreanName: "\uC0CC\uB354\uC2A4"
-    englishSurname: 
+  - koreanName: 
+    englishSurname: Arven
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: Daren
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: Eren
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: a
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: Arven
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: Arven
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: Arven
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: Arven
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: Arven
+    englishGivenNames: 
+  - koreanName: 
+    englishSurname: Arven
     englishGivenNames: 
   koreanNames:
   - "\uC0CC\uB354\uC2A4"
@@ -36,8 +63,18 @@ MonoBehaviour:
   - "\uB9AC\uBE44\uC544 \uC6B0\uBC14\uB9AC"
   familyRelationships:
   - 
+  medicalHistories: []
   passportNumbers:
-  - 
+  - M48038185
+  - S57630379
+  - M03361847
+  - K16712963
+  - T23405507
+  - S36858785
+  - K38579617
+  - V59182745
+  - T19384726
+  - M72918453
   passportIssueDates:
   - 
   passportExpiryDates:
@@ -46,6 +83,10 @@ MonoBehaviour:
   - 
   issuingAuthorities:
   - 
+  medicalRegistrationNumbers: []
+  medicalCertificateDates: []
+  medicalCertificateValidUntilDates: []
+  expiredMedicalCertificateDates: []
   photoPairs:
   - npcPhoto: {fileID: 21300000, guid: a07e57b231ec91744aede1e8f62a881c, type: 3}
     passportPhoto: {fileID: 21300000, guid: 52d36fe271f2fb842bf4ac07268787b9, type: 3}
@@ -71,3 +112,9 @@ MonoBehaviour:
     passportPhoto: {fileID: 21300000, guid: e634d3cf5cb2fb9409fbdbcb54058824, type: 3}
   - npcPhoto: {fileID: 21300000, guid: 2d33e1fc292ac3c4287322db72c04b6a, type: 3}
     passportPhoto: {fileID: 21300000, guid: 85737c10fb0463444be5bd4b98f01b44, type: 3}
+  invalidNpcChance: 0.3
+  passportSubmissionChance: 1
+  entryPermitSubmissionChance: 1
+  medicalHistoryChance: 0.2
+  medicalCertificateSubmissionChance: 1
+  failReasonWeights: []

@@ -4,28 +4,59 @@ using UnityEngine.UI;
 
 public class VolumeUI : MonoBehaviour
 {
-    public Slider bgmSlider;
-    public TMP_Text bgmText;
+    [SerializeField] private Slider bgmSlider;
+    [SerializeField] private TMP_Text bgmText;
 
-    public Slider sfxSlider;
-    public TMP_Text sfxText;
+    [SerializeField] private Slider sfxSlider;
+    [SerializeField] private TMP_Text sfxText;
 
-    void Start()
+    private GameAudioManager audioManager;
+
+    private void Awake()
     {
-        bgmSlider.onValueChanged.AddListener(ChangeBGM);
-        sfxSlider.onValueChanged.AddListener(ChangeSFX);
-
-        ChangeBGM(bgmSlider.value);
-        ChangeSFX(sfxSlider.value);
+        audioManager = GameAudioManager.GetOrCreate();
     }
 
-    void ChangeBGM(float value)
+    private void Start()
     {
-        bgmText.text = Mathf.RoundToInt(value * 100) + "%";
+        if (bgmSlider != null)
+        {
+            bgmSlider.SetValueWithoutNotify(audioManager.BgmVolume);
+            bgmSlider.onValueChanged.AddListener(ChangeBGM);
+        }
+
+        if (sfxSlider != null)
+        {
+            sfxSlider.SetValueWithoutNotify(audioManager.SfxVolume);
+            sfxSlider.onValueChanged.AddListener(ChangeSFX);
+        }
+
+        ChangeBGM(audioManager.BgmVolume);
+        ChangeSFX(audioManager.SfxVolume);
     }
 
-    void ChangeSFX(float value)
+    private void OnDestroy()
     {
-        sfxText.text = Mathf.RoundToInt(value * 100) + "%";
+        if (bgmSlider != null)
+            bgmSlider.onValueChanged.RemoveListener(ChangeBGM);
+
+        if (sfxSlider != null)
+            sfxSlider.onValueChanged.RemoveListener(ChangeSFX);
+    }
+
+    private void ChangeBGM(float value)
+    {
+        audioManager.SetBgmVolume(value);
+
+        if (bgmText != null)
+            bgmText.text = Mathf.RoundToInt(value * 100) + "%";
+    }
+
+    private void ChangeSFX(float value)
+    {
+        audioManager.SetSfxVolume(value);
+
+        if (sfxText != null)
+            sfxText.text = Mathf.RoundToInt(value * 100) + "%";
     }
 }

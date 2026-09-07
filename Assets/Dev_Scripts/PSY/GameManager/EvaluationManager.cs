@@ -4,7 +4,7 @@ using UnityEngine;
 [System.Serializable]
 public class InspectionRecord
 {
-    public string koreanName;
+    public string englishName;
     public bool playerApproved;
     public bool shouldApprove;
     public string reason;
@@ -18,11 +18,16 @@ public struct DailyPerformanceResult
     public int correctCount;
     public int wrongCount;
     public float accuracy;
-    public int performanceScore;
-    public int maxPerformanceScore;
+    public int judgementPerformanceMoney;
+    public int rentCost;
+    public int foodCost;
+    public int heatingCost;
+    public int livingCost;
+    public int netChange;
+    public int ownedPerformanceMoney;
     public string gradeLabel;
-    public int bonusPay;
     public string comment;
+    public bool isDaySettled;
 }
 
 public class EvaluationManager : MonoBehaviour
@@ -31,8 +36,15 @@ public class EvaluationManager : MonoBehaviour
     [Tooltip("성과금 등급, 지급률, 엔딩 기준을 담은 설정 SO입니다.")]
     [SerializeField] private EvaluationConfigSO config;
 
-    public int TotalScore { get; private set; }
-    public int DayScore { get; private set; }
+    public int OwnedPerformanceMoney { get; private set; }
+    public int TodayJudgementPerformanceMoney { get; private set; }
+    public int TodayNetChange { get; private set; }
+    public int TodayLivingCost { get; private set; }
+    public bool IsDaySettled { get; private set; }
+
+    public int TotalScore => OwnedPerformanceMoney;
+    public int DayScore => TodayJudgementPerformanceMoney;
+    public int FinalScore => Mathf.Max(0, OwnedPerformanceMoney);
 
     public int ApprovedCount { get; private set; }
     public int DeniedCount { get; private set; }
@@ -57,15 +69,15 @@ public class EvaluationManager : MonoBehaviour
     public int CumulativeWrongRejectCount { get; private set; }
     public int CumulativeInspectedCount => CumulativeCorrectCount + CumulativeWrongAcceptCount + CumulativeWrongRejectCount;
     public float CumulativeAccuracy => CumulativeInspectedCount == 0 ? 0f : (float)CumulativeCorrectCount / CumulativeInspectedCount;
-    public int CumulativePerformanceScore { get; private set; }
-    public int MaxCumulativePerformanceScore { get; private set; }
-    public string CumulativeGradeLabel => GetGrade(CumulativeAccuracy).label;
 
     private readonly List<InspectionRecord> dayRecords = new List<InspectionRecord>();
 
     public void ResetDay()
     {
-        DayScore = 0;
+        TodayJudgementPerformanceMoney = 0;
+        TodayNetChange = 0;
+        TodayLivingCost = GetLivingCostTotal();
+        IsDaySettled = false;
         ApprovedCount = 0;
         DeniedCount = 0;
         CorrectCount = 0;
@@ -84,47 +96,16 @@ public class EvaluationManager : MonoBehaviour
 
     public void ResetGame()
     {
-        TotalScore = 0;
+        OwnedPerformanceMoney = 0;
         CumulativeCorrectCount = 0;
         CumulativeWrongAcceptCount = 0;
         CumulativeWrongRejectCount = 0;
-        CumulativePerformanceScore = 0;
-        MaxCumulativePerformanceScore = 0;
-        ResetDay();
-    }
-
-    public void LoadGame(int totalScore)
-    {
-        TotalScore = totalScore;
-        CumulativeCorrectCount = 0;
-        CumulativeWrongAcceptCount = 0;
-        CumulativeWrongRejectCount = 0;
-        CumulativePerformanceScore = 0;
-        MaxCumulativePerformanceScore = 0;
-        ResetDay();
-    }
-
-    public void LoadGame(
-        int totalScore,
-        int cumulativeCorrectCount,
-        int cumulativeWrongAcceptCount,
-        int cumulativeWrongRejectCount,
-        int cumulativePerformanceScore,
-        int maxCumulativePerformanceScore)
-    {
-        TotalScore = totalScore;
-        CumulativeCorrectCount = cumulativeCorrectCount;
-        CumulativeWrongAcceptCount = cumulativeWrongAcceptCount;
-        CumulativeWrongRejectCount = cumulativeWrongRejectCount;
-        CumulativePerformanceScore = cumulativePerformanceScore;
-        MaxCumulativePerformanceScore = maxCumulativePerformanceScore;
         ResetDay();
     }
 
     public void SubmitJudgement(
         bool playerApproved,
         bool npcShouldBeApproved,
-        bool hardPenalty,
         NPCData npc = null,
         string reason = ""
     )
@@ -135,7 +116,7 @@ public class EvaluationManager : MonoBehaviour
             DeniedCount++;
 
         bool isCorrect = playerApproved == npcShouldBeApproved;
-        int score = CalculateScore(isCorrect, hardPenalty);
+        int performanceMoney = CalculateJudgementPerformanceMoney(isCorrect);
 
         if (isCorrect)
             CumulativeCorrectCount++;
@@ -155,12 +136,11 @@ public class EvaluationManager : MonoBehaviour
             CumulativeWrongRejectCount++;
         }
 
-        DayScore += score;
-        TotalScore += score;
+        TodayJudgementPerformanceMoney += performanceMoney;
 
         dayRecords.Add(new InspectionRecord
         {
-            koreanName = npc != null ? npc.koreanName : string.Empty,
+            englishName = npc != null ? $"{npc.englishSurname} {npc.englishGivenNames}".Trim() : string.Empty,
             playerApproved = playerApproved,
             shouldApprove = npcShouldBeApproved,
             reason = reason,
@@ -172,13 +152,12 @@ public class EvaluationManager : MonoBehaviour
     {
         MissedQuotaCount = Mathf.Max(0, quota - inspectedCount);
         Accuracy = inspectedCount == 0 ? 0f : (float)CorrectCount / inspectedCount;
-        PerformanceGrade grade = GetGrade(Accuracy);
-        int performanceScore = Mathf.RoundToInt(Accuracy * 100f);
-        int maxPerformanceScore = 100;
-        int bonusPay = Mathf.RoundToInt(GetBaseBonus() * grade.payRate);
 
-        CumulativePerformanceScore += performanceScore;
-        MaxCumulativePerformanceScore += maxPerformanceScore;
+        SettleDayOnce();
+        SettlementGrade grade = GetSettlementGrade(OwnedPerformanceMoney);
+        string comment = WrongCount > 0
+            ? "일부 심사 과정에서 규정 위반 사항이 확인되었습니다."
+            : grade.comment;
 
         LastDailyResult = new DailyPerformanceResult
         {
@@ -186,17 +165,33 @@ public class EvaluationManager : MonoBehaviour
             correctCount = CorrectCount,
             wrongCount = WrongCount,
             accuracy = Accuracy,
-            performanceScore = performanceScore,
-            maxPerformanceScore = maxPerformanceScore,
+            judgementPerformanceMoney = TodayJudgementPerformanceMoney,
+            rentCost = GetRentCost(),
+            foodCost = GetFoodCost(),
+            heatingCost = GetHeatingCost(),
+            livingCost = TodayLivingCost,
+            netChange = TodayNetChange,
+            ownedPerformanceMoney = OwnedPerformanceMoney,
             gradeLabel = grade.label,
-            bonusPay = bonusPay,
-            comment = grade.comment
+            comment = comment,
+            isDaySettled = IsDaySettled
         };
+    }
+
+    public void SettleDayOnce()
+    {
+        if (IsDaySettled)
+            return;
+
+        TodayLivingCost = GetLivingCostTotal();
+        TodayNetChange = TodayJudgementPerformanceMoney - TodayLivingCost;
+        OwnedPerformanceMoney += TodayNetChange;
+        IsDaySettled = true;
     }
 
     public bool IsGameOver()
     {
-        return false;
+        return IsDaySettled && OwnedPerformanceMoney < 0;
     }
 
     public RefugeesEndingType GetEndingType()
@@ -221,31 +216,68 @@ public class EvaluationManager : MonoBehaviour
         return config != null ? config.GetEndingNewsContent(endingType) : null;
     }
 
-    private int CalculateScore(bool isCorrect, bool hardPenalty)
+    private int CalculateJudgementPerformanceMoney(bool isCorrect)
     {
         if (isCorrect)
         {
             CorrectCount++;
             CorrectCombo++;
             WrongCombo = 0;
-            return 30 + (CorrectCombo - 1) * 10;
+            return GetCorrectBaseBonus() + (CorrectCombo - 1) * GetCorrectStreakBonusStep();
         }
 
         WrongCount++;
         WrongCombo++;
         CorrectCombo = 0;
 
-        int penalty = hardPenalty ? -200 : -100;
-        return penalty - (WrongCombo - 1) * 10;
+        return -GetWrongBasePenalty() - (WrongCombo - 1) * GetWrongStreakPenaltyStep();
     }
 
-    private PerformanceGrade GetGrade(float accuracy)
+    private SettlementGrade GetSettlementGrade(int ownedPerformanceMoney)
     {
-        return config != null ? config.GetGrade(accuracy) : new PerformanceGrade { label = "보통", minimumAccuracy = 0f, payRate = 0f };
+        return config != null
+            ? config.GetSettlementGrade(ownedPerformanceMoney)
+            : new SettlementGrade { label = ownedPerformanceMoney < 0 ? "미흡" : "보통", minimumOwnedPerformanceMoney = 0 };
     }
 
-    private int GetBaseBonus()
+    private int GetCorrectBaseBonus()
     {
-        return config != null ? config.baseBonus : 1000;
+        return config != null ? config.correctBaseBonus : 3;
     }
+
+    private int GetCorrectStreakBonusStep()
+    {
+        return config != null ? config.correctStreakBonusStep : 2;
+    }
+
+    private int GetWrongBasePenalty()
+    {
+        return config != null ? config.wrongBasePenalty : 4;
+    }
+
+    private int GetWrongStreakPenaltyStep()
+    {
+        return config != null ? config.wrongStreakPenaltyStep : 1;
+    }
+
+    private int GetRentCost()
+    {
+        return config != null ? config.rentCost : 40;
+    }
+
+    private int GetFoodCost()
+    {
+        return config != null ? config.foodCost : 15;
+    }
+
+    private int GetHeatingCost()
+    {
+        return config != null ? config.heatingCost : 5;
+    }
+
+    private int GetLivingCostTotal()
+    {
+        return config != null ? config.GetLivingCostTotal() : 60;
+    }
+
 }

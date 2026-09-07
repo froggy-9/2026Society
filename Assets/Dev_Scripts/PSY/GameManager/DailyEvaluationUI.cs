@@ -36,22 +36,22 @@ public class DailyEvaluationUI : MonoBehaviour
     [SerializeField] private TMP_Text accuracyValueText;
 
     [Header("Score")]
-    [Tooltip("금일 성과점수 숫자 텍스트입니다.")]
+    [Tooltip("보유 성과금 숫자 텍스트입니다.")]
     [SerializeField] private TMP_Text dailyScoreText;
     [Tooltip("평가 도장 텍스트입니다.")]
     [SerializeField] private TMP_Text gradeStampText;
 
-    [Header("Cumulative")]
-    [Tooltip("누적 성과점수 값 텍스트입니다.")]
+    [Header("Settlement")]
+    [Tooltip("판정 성과금 값 텍스트입니다.")]
     [SerializeField] private TMP_Text cumulativeScoreText;
-    [Tooltip("평균 정확도 값 텍스트입니다.")]
+    [Tooltip("총 생활비 값 텍스트입니다.")]
     [SerializeField] private TMP_Text averageAccuracyText;
-    [Tooltip("종합평가 값 텍스트입니다.")]
+    [Tooltip("금일 순증감 값 텍스트입니다.")]
     [SerializeField] private TMP_Text cumulativeGradeText;
-    [Tooltip("누적 정확도 진행 바 Fill 이미지입니다.")]
-    [SerializeField] private Image cumulativeProgressFill;
 
     [Header("Warning")]
+    [Tooltip("규정 위반/정상 근무 안내 박스입니다. 잘못된 선별이 없을 때 숨길 수 있습니다.")]
+    [SerializeField] private GameObject warningRoot;
     [Tooltip("기관 평가/주의 문구 본문 텍스트입니다.")]
     [SerializeField] private TMP_Text warningBodyText;
 
@@ -69,6 +69,9 @@ public class DailyEvaluationUI : MonoBehaviour
     private Coroutine revealRoutine;
     private Graphic[] revealGraphics;
     private float[] revealTargetAlphas;
+    private static readonly Color NormalValueColor = new Color(0.82f, 0.79f, 0.66f, 1f);
+    private static readonly Color PositiveMoneyColor = new Color(0.78f, 0.9f, 0.88f, 1f);
+    private static readonly Color NegativeMoneyColor = new Color(0.66f, 0.22f, 0.18f, 1f);
 
     private void Awake()
     {
@@ -117,29 +120,33 @@ public class DailyEvaluationUI : MonoBehaviour
         int accuracy = Mathf.RoundToInt(result.accuracy * 100f);
 
         SetText(topMetaText, "국경관리국  ·  심사관 단말");
-        SetText(dayText, $"DAY {gameManager.CurrentDay:00}");
-        SetText(categoryText, "근무평정  ·  심사관 근무 결산");
-        SetText(titleText, $"제{gameManager.CurrentDay}일차 업무평가");
-        SetText(subtitleText, "국경관리국 심사관 근무평정 보고서");
-        SetText(totalValueText, result.inspectedCount.ToString());
-        SetText(correctValueText, result.correctCount.ToString());
-        SetText(wrongValueText, result.wrongCount.ToString());
-        SetText(accuracyValueText, accuracy.ToString());
-        SetText(dailyScoreText, result.performanceScore.ToString());
-        SetText(gradeStampText, $"평가 {result.gradeLabel}");
-        SetText(cumulativeScoreText, $"{evaluation.CumulativePerformanceScore} / {evaluation.MaxCumulativePerformanceScore}");
-        SetText(averageAccuracyText, $"{evaluation.CumulativeAccuracy:P1}");
-        SetText(cumulativeGradeText, evaluation.CumulativeGradeLabel);
+        SetText(dayText, string.Empty);
+        SetText(categoryText, $"DAY {gameManager.CurrentDay:00}  ·  성과금 정산");
+        SetText(titleText, $"제{gameManager.CurrentDay}일차 근무 결산");
+        SetText(subtitleText, "국경관리국 심사관 성과금 정산 보고서");
+        SetText(totalValueText, $"{result.inspectedCount}<size=55%>건</size>");
+        SetText(correctValueText, $"{result.correctCount}<size=55%>건</size>");
+        SetText(wrongValueText, $"{result.wrongCount}<size=55%>건</size>");
+        SetText(accuracyValueText, $"{accuracy}<size=55%>%</size>");
+        SetText(dailyScoreText, $"{result.ownedPerformanceMoney}");
+        SetText(gradeStampText, result.gradeLabel);
+        SetText(cumulativeScoreText, FormatSignedMoney(result.judgementPerformanceMoney));
+        SetText(averageAccuracyText, FormatSignedMoney(-result.livingCost));
+        SetText(cumulativeGradeText, FormatSignedMoney(result.netChange));
         SetText(warningBodyText, result.comment);
-        SetStampRotation();
+        SetColor(totalValueText, NormalValueColor);
+        SetColor(correctValueText, NormalValueColor);
+        SetColor(wrongValueText, result.wrongCount > 0 ? NegativeMoneyColor : NormalValueColor);
+        SetColor(accuracyValueText, NormalValueColor);
+        SetColor(dailyScoreText, NormalValueColor);
+        SetColor(cumulativeScoreText, GetMoneyColor(result.judgementPerformanceMoney));
+        SetColor(averageAccuracyText, GetMoneyColor(-result.livingCost));
+        SetColor(cumulativeGradeText, GetMoneyColor(result.netChange));
 
-        if (cumulativeProgressFill != null)
-        {
-            cumulativeProgressFill.type = Image.Type.Filled;
-            cumulativeProgressFill.fillMethod = Image.FillMethod.Horizontal;
-            cumulativeProgressFill.fillOrigin = 0;
-            cumulativeProgressFill.fillAmount = Mathf.Clamp01(evaluation.CumulativeAccuracy);
-        }
+        if (warningRoot != null)
+            warningRoot.SetActive(result.wrongCount > 0);
+
+        SetStampRotation();
 
         PlayRevealMotion();
     }
@@ -240,17 +247,12 @@ public class DailyEvaluationUI : MonoBehaviour
         if (averageAccuracyText == null) averageAccuracyText = FindText("AverageAccuracyValue");
         if (cumulativeGradeText == null) cumulativeGradeText = FindText("CumulativeGradeValue");
         if (warningBodyText == null) warningBodyText = FindText("WarningBodyText");
-        if (cumulativeProgressFill == null) cumulativeProgressFill = FindImage("ProgressFill");
+        if (warningRoot == null && warningBodyText != null) warningRoot = warningBodyText.transform.parent.gameObject;
     }
 
     private TMP_Text FindText(string childName)
     {
         return documentRoot != null ? documentRoot.Find(childName)?.GetComponent<TMP_Text>() : null;
-    }
-
-    private Image FindImage(string childName)
-    {
-        return documentRoot != null ? documentRoot.Find(childName)?.GetComponent<Image>() : null;
     }
 
     private void SetStampRotation()
@@ -277,5 +279,21 @@ public class DailyEvaluationUI : MonoBehaviour
     {
         if (text != null)
             text.text = value;
+    }
+
+    private static void SetColor(TMP_Text text, Color color)
+    {
+        if (text != null)
+            text.color = color;
+    }
+
+    private static Color GetMoneyColor(int value)
+    {
+        return value < 0 ? NegativeMoneyColor : PositiveMoneyColor;
+    }
+
+    private static string FormatSignedMoney(int value)
+    {
+        return value > 0 ? $"+{value}" : value.ToString();
     }
 }

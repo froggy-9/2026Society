@@ -26,10 +26,10 @@ public class DocumentTemplateSO : ScriptableObject
     [Tooltip("영문 이름 라벨입니다.")]
     public string givenNamesLabel = "Given Names";
 
-    [Tooltip("한글 성명 라벨입니다.")]
+    [HideInInspector]
     public string koreanNameLabel = "Name in Korean";
 
-    [Tooltip("이름 라벨입니다. 입국허가서 같은 기타 서류에서 사용합니다.")]
+    [Tooltip("이름 라벨입니다. 입국허가서/진단서 같은 기타 서류에서 사용합니다.")]
     public string nameLabel = "Name";
 
     [Tooltip("국적 라벨입니다.")]
@@ -68,6 +68,19 @@ public class DocumentTemplateSO : ScriptableObject
 
     [Tooltip("의료/정신병력 기록 라벨입니다.")]
     public string medicalNoteLabel = "Medical Note";
+
+    [Header("Medical Certificate Labels")]
+    [Tooltip("진단서 등록번호 라벨입니다.")]
+    public string registrationNumberLabel = "Registration No.";
+
+    [Tooltip("진단서 작성일 라벨입니다.")]
+    public string medicalCertificateDateLabel = "Certificate Date";
+
+    [Tooltip("진단서 유효기간 라벨입니다.")]
+    public string medicalCertificateValidUntilLabel = "Valid Until";
+
+    [Tooltip("병명 라벨입니다.")]
+    public string medicalDiagnosisLabel = "Diagnosis";
 
     [Header("Default Values")]
     [Tooltip("전과나 기록이 없을 때 표시할 문구입니다.")]

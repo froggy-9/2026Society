@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public enum Gender
 {
@@ -10,9 +11,16 @@ public enum Gender
 public class NPCData
 {
     [Header("Person")]
+    [HideInInspector]
+    [FormerlySerializedAs("koreanName")]
     public string koreanName;
+
+    [Tooltip("영문 성입니다. 예: KIM")]
     public string englishSurname;
+
+    [Tooltip("영문 이름입니다. 예: MINJI")]
     public string englishGivenNames;
+
     public Gender gender;
     public int age;
     public Sprite portrait;
@@ -38,6 +46,7 @@ public class NPCData
     [Header("Documents")]
     public DocumentData passport;
     public DocumentData entryPermit;
+    public DocumentData medicalCertificate;
 
     [Header("Manual Decision")]
     public bool useManualDecision;

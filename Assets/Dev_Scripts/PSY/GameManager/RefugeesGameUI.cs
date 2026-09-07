@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class RefugeesGameUI : MonoBehaviour
@@ -20,8 +21,9 @@ public class RefugeesGameUI : MonoBehaviour
     [Tooltip("상시 열람용 규칙서 패널입니다.")]
     [SerializeField] private GameObject rulePanel;
 
-    [Tooltip("시계, 뉴스/규칙 팝업 버튼 등 플레이 중에만 보일 BasicUI Canvas입니다.")]
-    [SerializeField] private GameObject basicUiPanel;
+    [Tooltip("시계, 뉴스/규칙 팝업 버튼, 심사 버튼 등 플레이 중에만 보일 MainUI Canvas입니다.")]
+    [FormerlySerializedAs("basicUiPanel")]
+    [SerializeField] private GameObject mainUiPanel;
 
     [Header("Day Intro UI")]
     [Tooltip("일차 시작 때 가장 먼저 뜨는 DayUI Canvas입니다.")]
@@ -78,6 +80,19 @@ public class RefugeesGameUI : MonoBehaviour
     [Tooltip("최종 엔딩 뉴스를 표시할 전용 UI입니다.")]
     [SerializeField] private EndingNewsUI endingNewsView;
 
+    [Tooltip("게임오버 화면 UI입니다.")]
+    [SerializeField] private GameOverUI gameOverView;
+
+    [Header("Start Map UI")]
+    [Tooltip("Day 1 신문기사 전에 한 번만 보여줄 세계지도 StartUI 전체 오브젝트입니다.")]
+    [SerializeField] private GameObject startMapPanel;
+
+    [Tooltip("StartUI에서 실제로 밑에서 올라올 종이/지도 RectTransform입니다. 비워두면 StartUI 전체 RectTransform을 사용합니다.")]
+    [SerializeField] private RectTransform startMapMotionRoot;
+
+    [Tooltip("StartUI의 뒤 배경 패널입니다. 배경 클릭으로 다음 단계로 넘길 때 사용합니다.")]
+    [SerializeField] private RectTransform startMapBackgroundRoot;
+
     [Header("Panel Motion")]
     [Tooltip("뉴스/규칙 팝업이 열릴 때 시작 위치 오프셋입니다.")]
     [SerializeField] private Vector2 popupStartOffset = new Vector2(0f, -120f);
@@ -100,13 +115,6 @@ public class RefugeesGameUI : MonoBehaviour
 
     [Tooltip("현재 심사 수 / 목표 심사 수를 표시할 TMP 텍스트입니다.")]
     [SerializeField] private TMP_Text quotaText;
-
-    [Header("Result")]
-    [Tooltip("다음 날로 넘어가는 버튼입니다.")]
-    [SerializeField] private Button nextDayButton;
-
-    [Tooltip("게임을 처음부터 다시 시작하는 버튼입니다.")]
-    [SerializeField] private Button restartButton;
 
     private RefugeesGameManager gameManager;
     private bool openedNewsAsPopup;
@@ -140,11 +148,6 @@ public class RefugeesGameUI : MonoBehaviour
             gameManager.StateChanged += RefreshState;
         }
 
-        if (nextDayButton != null)
-            nextDayButton.onClick.AddListener(NextDay);
-
-        if (restartButton != null)
-            restartButton.onClick.AddListener(RestartGame);
     }
 
     private void OnDisable()
@@ -155,11 +158,6 @@ public class RefugeesGameUI : MonoBehaviour
         if (gameManager != null)
             gameManager.StateChanged -= RefreshState;
 
-        if (nextDayButton != null)
-            nextDayButton.onClick.RemoveListener(NextDay);
-
-        if (restartButton != null)
-            restartButton.onClick.RemoveListener(RestartGame);
     }
 
     private void Start()
@@ -180,6 +178,8 @@ public class RefugeesGameUI : MonoBehaviour
 
         if (IsPopupOpen() && (WasClosePopupKeyPressed() || WasOutsidePopupClickPressed()))
             ClosePopups();
+        else if (gameManager.CurrentState == GameState.StartMap && WasStartMapAdvanceInputPressed())
+            gameManager.BeginDayNews();
         else if (gameManager.CurrentState == GameState.News && WasNewsAdvanceInputPressed())
             ContinueFromNews();
 
@@ -223,7 +223,6 @@ public class RefugeesGameUI : MonoBehaviour
 
         openedNewsAsPopup = gameManager.CurrentState != GameState.News;
         ignoreOutsideClickUntilFrame = Time.frameCount + 1;
-        SetBasicUiVisible(false);
         SetPopupBackgroundVisible(newsPopupBackground, true, 0f);
         SetActive(newsPanel, true);
         RefreshNews();
@@ -243,7 +242,6 @@ public class RefugeesGameUI : MonoBehaviour
 
         openedRuleAsPopup = true;
         ignoreOutsideClickUntilFrame = Time.frameCount + 1;
-        SetBasicUiVisible(false);
         SetPopupBackgroundVisible(rulePopupBackground, true, 0f);
         SetActive(rulePanel, true);
         ruleListView?.Show(gameManager.GetCurrentRules(), gameManager.GetCurrentRuleDescription());
@@ -260,7 +258,7 @@ public class RefugeesGameUI : MonoBehaviour
 
         openedNewsAsPopup = false;
         openedRuleAsPopup = false;
-        SetBasicUiVisible(gameManager != null && gameManager.CurrentState == GameState.Inspection);
+        SetMainUiVisible(gameManager != null && gameManager.CurrentState == GameState.Inspection);
     }
 
     public void NextDay()
@@ -277,6 +275,7 @@ public class RefugeesGameUI : MonoBehaviour
     {
         bool showNews = state == GameState.News;
         bool showDayIntro = state == GameState.DayIntro;
+        bool showStartMap = state == GameState.StartMap;
 
         if (showNews)
         {
@@ -292,12 +291,17 @@ public class RefugeesGameUI : MonoBehaviour
         SetActive(inspectionPanel, state == GameState.Inspection);
         SetActive(resultPanel, state == GameState.Result);
 
+        if (showStartMap)
+            SetActive(startMapPanel, true);
+        else if (startMapPanel != null && startMapPanel.activeSelf)
+            FadeOutPanel(startMapPanel, startMapMotionRoot);
+
         if (showNews)
             SetActive(rulePanel, false);
         else if (rulePanel != null && rulePanel.activeSelf)
             FadeOutPanel(rulePanel, rulePopupMotionRoot);
 
-        SetBasicUiVisible(state == GameState.Inspection);
+        SetMainUiVisible(state == GameState.Inspection);
 
         openedNewsAsPopup = false;
         openedRuleAsPopup = false;
@@ -314,6 +318,11 @@ public class RefugeesGameUI : MonoBehaviour
             PlayPanelOpenMotion(newsPanel, newsPopupMotionRoot, popupStartOffset);
         }
 
+        if (showStartMap)
+        {
+            PlayPanelOpenMotion(startMapPanel, startMapMotionRoot, popupStartOffset);
+        }
+
         if (state == GameState.Result)
         {
             dailyEvaluationView?.Show(gameManager);
@@ -326,6 +335,11 @@ public class RefugeesGameUI : MonoBehaviour
             ShowEndingNews();
         else
             endingNewsView?.Hide();
+
+        if (state == GameState.GameOver)
+            ShowGameOver();
+        else
+            gameOverView?.HideImmediate();
     }
 
     private void RefreshAll()
@@ -471,9 +485,9 @@ public class RefugeesGameUI : MonoBehaviour
         panelMotionRoutines[panel] = null;
     }
 
-    private void SetBasicUiVisible(bool visible)
+    private void SetMainUiVisible(bool visible)
     {
-        SetActive(basicUiPanel, visible);
+        SetActive(mainUiPanel, visible);
     }
 
     private void PlayDayIntro()
@@ -499,30 +513,20 @@ public class RefugeesGameUI : MonoBehaviour
         SetActive(rulePanel, false);
         SetActive(inspectionPanel, false);
         SetActive(resultPanel, false);
-        SetBasicUiVisible(false);
+        SetActive(startMapPanel, false);
+        SetMainUiVisible(false);
 
         CanvasGroup canvasGroup = dayIntroPanel.GetComponent<CanvasGroup>();
 
         if (canvasGroup == null)
             canvasGroup = dayIntroPanel.AddComponent<CanvasGroup>();
 
-        canvasGroup.alpha = 0f;
+        canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
         canvasGroup.interactable = true;
 
-        float fadeInElapsed = 0f;
-        float fadeInDuration = Mathf.Max(0.01f, dayIntroFadeInDuration);
-
-        while (fadeInElapsed < fadeInDuration)
-        {
-            fadeInElapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(fadeInElapsed / fadeInDuration);
-            float eased = Mathf.SmoothStep(0f, 1f, t);
-            canvasGroup.alpha = eased;
-            yield return null;
-        }
-
-        canvasGroup.alpha = 1f;
+        if (dayIntroText != null)
+            dayIntroText.alpha = 1f;
 
         for (int i = 0; i < introText.Length; i++)
         {
@@ -540,12 +544,13 @@ public class RefugeesGameUI : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.Clamp01(elapsed / duration);
             float eased = Mathf.SmoothStep(0f, 1f, t);
-            canvasGroup.alpha = Mathf.Lerp(1f, 0f, eased);
+
+            if (dayIntroText != null)
+                dayIntroText.alpha = Mathf.Lerp(1f, 0f, eased);
+
             yield return null;
         }
 
-        canvasGroup.alpha = 1f;
-        SetActive(dayIntroPanel, false);
         dayIntroRoutine = null;
         gameManager?.BeginDayNews();
     }
@@ -586,6 +591,33 @@ public class RefugeesGameUI : MonoBehaviour
         return keyboardPressed || WasStartBackgroundClickPressed();
     }
 
+    private bool WasStartMapAdvanceInputPressed()
+    {
+        Keyboard keyboard = Keyboard.current;
+        bool keyboardPressed = keyboard != null
+            && (keyboard.enterKey.wasPressedThisFrame
+                || keyboard.numpadEnterKey.wasPressedThisFrame
+                || keyboard.spaceKey.wasPressedThisFrame);
+
+        if (keyboardPressed)
+            return true;
+
+        Mouse mouse = Mouse.current;
+
+        if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
+            return false;
+
+        if (startMapBackgroundRoot == null)
+            return true;
+
+        Vector2 screenPoint = mouse.position.ReadValue();
+
+        if (!IsScreenPointInside(startMapBackgroundRoot, screenPoint))
+            return false;
+
+        return !IsScreenPointInside(startMapMotionRoot, screenPoint);
+    }
+
     private void RegisterGameManager()
     {
         RefugeesGameManager nextManager = RefugeesGameManager.Instance;
@@ -613,11 +645,44 @@ public class RefugeesGameUI : MonoBehaviour
 
         if (endingNewsView == null)
             endingNewsView = GetComponentInChildren<EndingNewsUI>(true);
+
+        if (gameOverView == null)
+            gameOverView = GetComponentInChildren<GameOverUI>(true);
+
+        if (startMapPanel == null)
+        {
+            Transform startMap = FindSceneObjectByName("StartUI");
+            if (startMap != null)
+                startMapPanel = startMap.gameObject;
+        }
+
+        if (startMapMotionRoot == null && startMapPanel != null)
+            startMapMotionRoot = startMapPanel.GetComponent<RectTransform>();
     }
 
     private bool IsPopupOpen()
     {
         return openedNewsAsPopup || openedRuleAsPopup;
+    }
+
+    private static Transform FindSceneObjectByName(string objectName)
+    {
+        Transform[] transforms = Resources.FindObjectsOfTypeAll<Transform>();
+
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform candidate = transforms[i];
+
+            if (candidate == null || candidate.name != objectName)
+                continue;
+
+            if (!candidate.gameObject.scene.IsValid())
+                continue;
+
+            return candidate;
+        }
+
+        return null;
     }
 
     private static bool WasClosePopupKeyPressed()
@@ -705,8 +770,22 @@ public class RefugeesGameUI : MonoBehaviour
         SetActive(rulePanel, false);
         SetActive(inspectionPanel, false);
         SetActive(resultPanel, false);
-        SetBasicUiVisible(false);
+        SetActive(startMapPanel, false);
+        SetMainUiVisible(false);
 
         endingNewsView?.Show(evaluation.GetEndingType(), evaluation.GetEndingNewsContent());
+    }
+
+    private void ShowGameOver()
+    {
+        SetActive(newsPanel, false);
+        SetActive(rulePanel, false);
+        SetActive(inspectionPanel, false);
+        SetActive(resultPanel, false);
+        SetActive(startMapPanel, false);
+        SetMainUiVisible(false);
+        endingNewsView?.Hide();
+
+        gameOverView?.Show();
     }
 }

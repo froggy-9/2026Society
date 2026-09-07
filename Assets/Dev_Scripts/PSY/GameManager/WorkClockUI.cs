@@ -25,7 +25,7 @@ public class WorkClockUI : MonoBehaviour
 
         if (remainingWorkImage == null)
         {
-            Transform fill = transform.Find("WorkClockRoot/ClockFace/RemainingWorkFill");
+            Transform fill = transform.Find("ClockFace/RemainingWorkFill");
             if (fill != null)
                 remainingWorkImage = fill.GetComponent<Image>();
         }

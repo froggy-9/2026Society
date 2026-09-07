@@ -4,6 +4,9 @@ using UnityEngine;
 public class NPCManager : MonoBehaviour
 {
     public event System.Action QueueChanged;
+    public event System.Action<NPCController> NpcSpawned;
+    public event System.Action<NPCController> NpcArrived;
+    public event System.Action NpcCleared;
 
     [Header("NPC Spawner")]
     [Tooltip("NPC를 실제 씬에 생성하는 스포너입니다.")]
@@ -16,6 +19,7 @@ public class NPCManager : MonoBehaviour
     private readonly List<NPCData> remainingNpcs = new List<NPCData>();
 
     private NPCController currentNPC;
+    private int loadedDay;
 
     public NPCController CurrentNPC => currentNPC;
     public bool HasQueuedNpc => remainingNpcs.Count > 0;
@@ -77,8 +81,10 @@ public class NPCManager : MonoBehaviour
             return;
 
         currentNPC.Exited += OnNPCExited;
+        currentNPC.Arrived += OnNPCArrived;
         QueueChanged?.Invoke();
-        Debug.Log($"NPC spawned: {currentNPC.Data.koreanName}");
+        Debug.Log($"NPC spawned: {currentNPC.Data.englishSurname} {currentNPC.Data.englishGivenNames}");
+        NpcSpawned?.Invoke(currentNPC);
     }
 
     public void RequestNextNPC()
@@ -110,6 +116,8 @@ public class NPCManager : MonoBehaviour
     {
         if (state == GameState.Inspection)
         {
+            EnsureCurrentDayQueue();
+
             if (spawnFirstNpcAutomatically)
                 SpawnNextNPC();
             else
@@ -121,6 +129,7 @@ public class NPCManager : MonoBehaviour
 
     private void OnDayStarted(int day)
     {
+        loadedDay = day;
         DayDataSO dayData = RefugeesGameManager.Instance.GetCurrentDayData();
 
         remainingNpcs.Clear();
@@ -134,18 +143,11 @@ public class NPCManager : MonoBehaviour
                 ? dayData.npcCount
                 : dayData.targetInspectionCount;
 
-            int rejectCount = Mathf.Clamp(dayData.rejectNpcCount, 0, randomCount);
-            List<int> rejectIndexes = CreateRandomIndexes(randomCount, rejectCount);
-
             for (int i = 0; i < randomCount; i++)
             {
-                NpcFailReason failReason = rejectIndexes.Contains(i)
-                    ? dayData.npcTable.PickFailReason(dayData.rejectReasons)
-                    : NpcFailReason.None;
-
                 remainingNpcs.Add(dayData.npcTable.CreateRandomNpc(
                     dayData.currentDate,
-                    failReason
+                    dayData.rejectReasons
                 ));
             }
         }
@@ -155,25 +157,17 @@ public class NPCManager : MonoBehaviour
         QueueChanged?.Invoke();
     }
 
-    private List<int> CreateRandomIndexes(int maxCount, int count)
+    private void EnsureCurrentDayQueue()
     {
-        List<int> indexes = new List<int>();
+        if (RefugeesGameManager.Instance == null)
+            return;
 
-        for (int i = 0; i < maxCount; i++)
-            indexes.Add(i);
+        int currentDay = RefugeesGameManager.Instance.CurrentDay;
 
-        for (int i = 0; i < indexes.Count; i++)
-        {
-            int swapIndex = Random.Range(i, indexes.Count);
-            int temp = indexes[i];
-            indexes[i] = indexes[swapIndex];
-            indexes[swapIndex] = temp;
-        }
+        if (loadedDay == currentDay)
+            return;
 
-        if (count < indexes.Count)
-            indexes.RemoveRange(count, indexes.Count - count);
-
-        return indexes;
+        OnDayStarted(currentDay);
     }
 
     private void OnNPCExited(NPCController npc)
@@ -184,12 +178,24 @@ public class NPCManager : MonoBehaviour
         OnNPCFinished();
     }
 
+    private void OnNPCArrived(NPCController npc)
+    {
+        if (npc != currentNPC)
+            return;
+
+        NpcArrived?.Invoke(npc);
+    }
+
     private void ClearCurrentNPC()
     {
         if (currentNPC != null)
+        {
             currentNPC.Exited -= OnNPCExited;
+            currentNPC.Arrived -= OnNPCArrived;
+        }
 
         currentNPC = null;
+        NpcCleared?.Invoke();
     }
 
     private NPCData TakeRandomNpc()
@@ -215,7 +221,7 @@ public class NPCManager : MonoBehaviour
             if (specialNpc == null || !specialNpc.CanAppearOnDay(dayData.day))
                 continue;
 
-            remainingNpcs.Add(specialNpc.CreateNpc());
+            remainingNpcs.Add(specialNpc.CreateNpc(dayData.currentDate));
         }
     }
 

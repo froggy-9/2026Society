@@ -1,10 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 [System.Serializable]
@@ -22,104 +19,41 @@ public class NewsViewUI : MonoBehaviour
 {
     public event System.Action ContinueRequested;
 
-    [System.Serializable]
-    public class NewsPageSlot
-    {
-        [Tooltip("뉴스 한 페이지 전체 오브젝트입니다.")]
-        public GameObject pageRoot;
+    [Header("Newspaper Text Slots")]
+    [Tooltip("신문 상단 날짜 텍스트 칸입니다. NewsSO.dateText가 들어갑니다.")]
+    [SerializeField] private TMP_Text dateText;
 
-        [Tooltip("이 페이지에 헤드라인을 표시할 TMP 텍스트들입니다.")]
-        public TMP_Text[] titleTexts;
+    [Tooltip("신문 상단 Day/신문기사 텍스트 칸입니다. NewsSO.dayText가 들어갑니다.")]
+    [SerializeField] private TMP_Text dayText;
 
-        [Tooltip("이 페이지의 본문 칸들입니다. 여러 개면 본문을 순서대로 나눠 넣습니다.")]
-        public TMP_Text[] bodyTexts;
+    [Tooltip("신문 헤드라인 텍스트 칸입니다. NewsSO.title이 들어갑니다.")]
+    [SerializeField] private TMP_Text headlineText;
 
-        [Tooltip("이 페이지에 표시할 이미지 슬롯들입니다.")]
-        public NewsImageSlot[] imageSlots;
-    }
+    [Tooltip("신문 본문 텍스트 칸입니다. 여러 개면 본문을 순서대로 나눠 넣습니다.")]
+    [SerializeField] private TMP_Text[] newspaperBodyTexts;
 
-    [Header("Pages")]
-    [Tooltip("뉴스 페이지 묶음입니다. 1페이지, 2페이지처럼 Panel 오브젝트를 순서대로 넣습니다.")]
-    [SerializeField] private NewsPageSlot[] pages;
+    [Tooltip("신문 이미지 칸입니다. Image Number와 NewsSO.images 순서가 매칭됩니다.")]
+    [SerializeField] private NewsImageSlot[] newspaperImageSlots;
 
-    [Tooltip("이전 뉴스 페이지 버튼들입니다. 페이지마다 버튼이 따로 있으면 전부 넣습니다.")]
-    [SerializeField] private Button[] previousPageButtons;
+    [Header("Newspaper Scroll")]
+    [Tooltip("신문 본문 Scroll View의 ScrollRect입니다. 세로 스크롤이 필요한 신문 UI에 연결합니다.")]
+    [SerializeField] private ScrollRect newspaperScrollRect;
 
-    [Tooltip("다음 뉴스 페이지 버튼들입니다. 마지막 페이지에서는 심사 화면으로 넘어갑니다.")]
-    [SerializeField] private Button[] nextPageButtons;
+    [Tooltip("신문 본문 Scroll View 안의 Content RectTransform입니다.")]
+    [SerializeField] private RectTransform newspaperContent;
 
-    [Header("Page Motion")]
-    [Tooltip("뉴스 페이지가 바뀔 때 아래에서 올라오는 거리입니다.")]
-    [SerializeField] private Vector2 pageStartOffset = new Vector2(0f, -28f);
+    [Tooltip("Content가 Viewport보다 작을 때 유지할 최소 높이입니다. 0이면 Viewport 높이를 기준으로 합니다.")]
+    [SerializeField] private float minimumContentHeight;
 
-    [Tooltip("뉴스 페이지가 서서히 나타나는 시간입니다.")]
-    [SerializeField] private float pageFadeDuration = 0.6f;
-
-    [HideInInspector]
-    [SerializeField] private Button previousPageButton;
-
-    [HideInInspector]
-    [SerializeField] private Button nextPageButton;
-
-    [Header("Text Slots")]
-    [HideInInspector]
-    [SerializeField] private TMP_Text titleText;
-
-    [HideInInspector]
-    [SerializeField] private TMP_Text bodyText;
-
-    [Header("Image Slots")]
-    [HideInInspector]
-    [SerializeField] private NewsImageSlot[] imageSlots;
-
-    [HideInInspector]
-    [SerializeField] private Image imageSlot1;
-
-    [HideInInspector]
-    [SerializeField] private Image imageSlot2;
-
-    [HideInInspector]
-    [SerializeField] private Image imageSlot3;
-
-    [HideInInspector]
-    [SerializeField] private Image imageSlot4;
-
-    [HideInInspector]
-    [FormerlySerializedAs("newsImages")]
-    [SerializeField] private Image[] extraImageSlots;
-
-    [HideInInspector]
-    [FormerlySerializedAs("newsImage")]
-    [SerializeField] private Image newsImage;
+    [Tooltip("본문/이미지 아래에 남길 여백입니다.")]
+    [SerializeField] private float scrollBottomPadding = 48f;
 
     private string currentTitle;
     private string currentBody;
+    private string currentDateText;
+    private string currentDayText;
     private Sprite[] currentImages = System.Array.Empty<Sprite>();
-    private int currentPageIndex;
-    private readonly Dictionary<RectTransform, Vector2> pageBasePositions = new Dictionary<RectTransform, Vector2>();
-    private Coroutine pageMotionRoutine;
-
-    private void OnEnable()
-    {
-        AddListeners();
-        RefreshPageVisibility();
-    }
-
-    private void OnDisable()
-    {
-        RemoveListeners();
-
-        if (pageMotionRoutine != null)
-        {
-            StopCoroutine(pageMotionRoutine);
-            pageMotionRoutine = null;
-        }
-    }
-
-    private void Update()
-    {
-        HandlePageButtonPointerFallback();
-    }
+    private readonly Dictionary<RectTransform, float> textBaseHeights = new Dictionary<RectTransform, float>();
 
     public void Show(NewsSO news, IEnumerable<string> extraNews = null)
     {
@@ -131,56 +65,28 @@ public class NewsViewUI : MonoBehaviour
 
         currentTitle = news.title;
         currentBody = BuildBody(news.body, extraNews);
+        currentDateText = news.dateText;
+        currentDayText = news.dayText;
         currentImages = news.GetImages();
-        currentPageIndex = 0;
 
-        if (HasPages)
-            ShowPagedNews();
-        else
-        {
-            SetText(titleText, currentTitle);
-            SetText(bodyText, currentBody);
-            SetImages(currentImages);
-        }
+        ShowNewspaperSlots();
+        RefreshNewspaperScroll();
     }
 
     public void Clear()
     {
         currentTitle = string.Empty;
         currentBody = string.Empty;
+        currentDateText = string.Empty;
+        currentDayText = string.Empty;
         currentImages = System.Array.Empty<Sprite>();
-        currentPageIndex = 0;
 
-        SetText(titleText, string.Empty);
-        SetText(bodyText, string.Empty);
-        SetImages(null);
-        ClearPages();
-    }
-
-    public void ShowPreviousPage()
-    {
-        if (!HasPages)
-            return;
-
-        currentPageIndex = Mathf.Max(0, currentPageIndex - 1);
-        ShowPagedNews();
+        ClearNewspaperSlots();
+        RefreshNewspaperScroll();
     }
 
     public void ShowNextPageOrContinue()
     {
-        if (!HasPages)
-        {
-            ContinueRequested?.Invoke();
-            return;
-        }
-
-        if (currentPageIndex < pages.Length - 1)
-        {
-            currentPageIndex++;
-            ShowPagedNews();
-            return;
-        }
-
         ContinueRequested?.Invoke();
     }
 
@@ -224,105 +130,156 @@ public class NewsViewUI : MonoBehaviour
         image.preserveAspect = true;
     }
 
-    private bool HasPages => pages != null && pages.Length > 0;
+    private bool HasNewspaperSlots =>
+        dateText != null
+        || dayText != null
+        || headlineText != null
+        || HasAnyText(newspaperBodyTexts)
+        || HasAnyImageSlot(newspaperImageSlots);
 
-    private void ShowPagedNews()
+    private void ShowNewspaperSlots()
     {
-        RefreshPageVisibility();
-
-        List<TMP_Text> bodySlots = GetBodySlots();
-        string[] bodyParts = SplitText(currentBody, bodySlots.Count);
-
-        int bodyIndex = 0;
-
-        for (int i = 0; i < pages.Length; i++)
-        {
-            NewsPageSlot page = pages[i];
-
-            if (page == null)
-                continue;
-
-            SetTexts(page.titleTexts, currentTitle);
-
-            if (page.bodyTexts != null)
-            {
-                for (int j = 0; j < page.bodyTexts.Length; j++)
-                {
-                    string text = bodyIndex < bodyParts.Length ? bodyParts[bodyIndex] : string.Empty;
-                    SetText(page.bodyTexts[j], text);
-                    bodyIndex++;
-                }
-            }
-
-            SetImages(page.imageSlots, currentImages);
-        }
-    }
-
-    private void ClearPages()
-    {
-        if (!HasPages)
+        if (!HasNewspaperSlots)
             return;
 
-        for (int i = 0; i < pages.Length; i++)
-        {
-            NewsPageSlot page = pages[i];
+        SetText(dateText, currentDateText);
+        SetText(dayText, currentDayText);
+        SetText(headlineText, currentTitle);
 
-            if (page == null)
+        List<TMP_Text> bodySlots = GetNewspaperBodySlots();
+        string[] bodyParts = SplitText(currentBody, bodySlots.Count);
+
+        for (int i = 0; i < bodySlots.Count; i++)
+        {
+            string value = i < bodyParts.Length ? bodyParts[i] : string.Empty;
+            SetText(bodySlots[i], value);
+        }
+
+        SetImages(newspaperImageSlots, currentImages);
+    }
+
+    private void RefreshNewspaperScroll()
+    {
+        if (newspaperScrollRect == null && newspaperContent == null)
+            ResolveScrollFromBodySlots();
+
+        RectTransform content = newspaperContent;
+
+        if (content == null)
+            return;
+
+        Canvas.ForceUpdateCanvases();
+        ResizeTextsToPreferredHeight(newspaperBodyTexts);
+        Canvas.ForceUpdateCanvases();
+
+        RectTransform viewport = newspaperScrollRect != null ? newspaperScrollRect.viewport : null;
+        float viewportHeight = viewport != null ? viewport.rect.height : 0f;
+        float requiredHeight = Mathf.Max(minimumContentHeight, viewportHeight);
+
+        for (int i = 0; i < content.childCount; i++)
+        {
+            RectTransform child = content.GetChild(i) as RectTransform;
+
+            if (child == null || !child.gameObject.activeSelf)
                 continue;
 
-            SetTexts(page.titleTexts, string.Empty);
-            SetTexts(page.bodyTexts, string.Empty);
-            SetImages(page.imageSlots, null);
+            float bottom = GetBottomDistanceFromContentTop(content, child);
+            requiredHeight = Mathf.Max(requiredHeight, bottom + scrollBottomPadding);
         }
 
-        RefreshPageVisibility();
+        Vector2 size = content.sizeDelta;
+        size.y = requiredHeight;
+        content.sizeDelta = size;
+        content.anchoredPosition = new Vector2(content.anchoredPosition.x, 0f);
+
+        if (newspaperScrollRect != null)
+            newspaperScrollRect.verticalNormalizedPosition = 1f;
     }
 
-    private void RefreshPageVisibility()
+    private void ResolveScrollFromBodySlots()
     {
-        if (HasPages)
+        TMP_Text bodySlot = null;
+
+        if (newspaperBodyTexts != null)
         {
-            currentPageIndex = Mathf.Clamp(currentPageIndex, 0, pages.Length - 1);
-
-            for (int i = 0; i < pages.Length; i++)
+            for (int i = 0; i < newspaperBodyTexts.Length; i++)
             {
-                if (pages[i]?.pageRoot != null)
-                    pages[i].pageRoot.SetActive(i == currentPageIndex);
+                if (newspaperBodyTexts[i] != null)
+                {
+                    bodySlot = newspaperBodyTexts[i];
+                    break;
+                }
             }
-
-            PlayCurrentPageMotion();
         }
 
-        bool showPrevious = HasPages && currentPageIndex > 0;
-        SetButtonsActive(previousPageButtons, showPrevious);
-        if (!ContainsButton(previousPageButtons, previousPageButton))
-            SetButtonActive(previousPageButton, showPrevious);
+        if (bodySlot == null)
+            return;
 
-        SetButtonsActive(nextPageButtons, true);
-        if (!ContainsButton(nextPageButtons, nextPageButton))
-            SetButtonActive(nextPageButton, true);
+        newspaperScrollRect = bodySlot.GetComponentInParent<ScrollRect>();
+        if (newspaperScrollRect != null)
+            newspaperContent = newspaperScrollRect.content;
     }
 
-    private List<TMP_Text> GetBodySlots()
+    private void ResizeTextsToPreferredHeight(TMP_Text[] texts)
+    {
+        if (texts == null)
+            return;
+
+        for (int i = 0; i < texts.Length; i++)
+        {
+            TMP_Text text = texts[i];
+
+            if (text == null)
+                continue;
+
+            RectTransform rectTransform = text.rectTransform;
+
+            if (!textBaseHeights.ContainsKey(rectTransform))
+                textBaseHeights.Add(rectTransform, rectTransform.sizeDelta.y);
+
+            float baseHeight = textBaseHeights[rectTransform];
+            float preferredHeight = text.GetPreferredValues(text.text, rectTransform.rect.width, 0f).y;
+            Vector2 size = rectTransform.sizeDelta;
+            size.y = Mathf.Max(baseHeight, preferredHeight);
+            rectTransform.sizeDelta = size;
+            text.ForceMeshUpdate();
+        }
+    }
+
+    private static float GetBottomDistanceFromContentTop(RectTransform content, RectTransform child)
+    {
+        Vector3[] childCorners = new Vector3[4];
+        child.GetWorldCorners(childCorners);
+
+        float minY = float.MaxValue;
+
+        for (int i = 0; i < childCorners.Length; i++)
+        {
+            Vector3 localCorner = content.InverseTransformPoint(childCorners[i]);
+            minY = Mathf.Min(minY, localCorner.y);
+        }
+
+        return content.rect.yMax - minY;
+    }
+
+    private void ClearNewspaperSlots()
+    {
+        SetText(dateText, string.Empty);
+        SetText(dayText, string.Empty);
+        SetText(headlineText, string.Empty);
+        SetTexts(newspaperBodyTexts, string.Empty);
+        SetImages(newspaperImageSlots, null);
+    }
+
+    private List<TMP_Text> GetNewspaperBodySlots()
     {
         List<TMP_Text> slots = new List<TMP_Text>();
 
-        if (!HasPages)
-        {
-            AddText(slots, bodyText);
+        if (newspaperBodyTexts == null)
             return slots;
-        }
 
-        for (int i = 0; i < pages.Length; i++)
-        {
-            TMP_Text[] bodyTexts = pages[i]?.bodyTexts;
-
-            if (bodyTexts == null)
-                continue;
-
-            for (int j = 0; j < bodyTexts.Length; j++)
-                AddText(slots, bodyTexts[j]);
-        }
+        for (int i = 0; i < newspaperBodyTexts.Length; i++)
+            AddText(slots, newspaperBodyTexts[i]);
 
         return slots;
     }
@@ -394,239 +351,38 @@ public class NewsViewUI : MonoBehaviour
         return result;
     }
 
-    private void AddListeners()
-    {
-        RemoveListeners();
-
-        AddButtonListeners(previousPageButtons, ShowPreviousPage);
-        AddButtonListeners(nextPageButtons, ShowNextPageOrContinue);
-
-        if (!ContainsButton(previousPageButtons, previousPageButton))
-            previousPageButton?.onClick.AddListener(ShowPreviousPage);
-
-        if (!ContainsButton(nextPageButtons, nextPageButton))
-            nextPageButton?.onClick.AddListener(ShowNextPageOrContinue);
-    }
-
-    private void RemoveListeners()
-    {
-        RemoveButtonListeners(previousPageButtons, ShowPreviousPage);
-        RemoveButtonListeners(nextPageButtons, ShowNextPageOrContinue);
-
-        if (!ContainsButton(previousPageButtons, previousPageButton))
-            previousPageButton?.onClick.RemoveListener(ShowPreviousPage);
-
-        if (!ContainsButton(nextPageButtons, nextPageButton))
-            nextPageButton?.onClick.RemoveListener(ShowNextPageOrContinue);
-    }
-
-    private void SetImages(Sprite[] sprites)
-    {
-        if (imageSlots != null && imageSlots.Length > 0)
-        {
-            for (int i = 0; i < imageSlots.Length; i++)
-            {
-                NewsImageSlot slot = imageSlots[i];
-
-                if (slot == null)
-                    continue;
-
-                int spriteIndex = Mathf.Max(1, slot.imageNumber) - 1;
-                Sprite sprite = sprites != null && spriteIndex < sprites.Length ? sprites[spriteIndex] : null;
-                SetImage(slot.image, sprite);
-            }
-
-            return;
-        }
-
-        Image[] legacySlots = GetLegacyImageSlots();
-
-        if (legacySlots != null && legacySlots.Length > 0)
-        {
-            for (int i = 0; i < legacySlots.Length; i++)
-            {
-                Sprite sprite = sprites != null && i < sprites.Length ? sprites[i] : null;
-                SetImage(legacySlots[i], sprite);
-            }
-
-            return;
-        }
-
-        Sprite firstSprite = sprites != null && sprites.Length > 0 ? sprites[0] : null;
-        SetImage(newsImage, firstSprite);
-    }
-
-    private Image[] GetLegacyImageSlots()
-    {
-        List<Image> slots = new List<Image>();
-        AddSlot(slots, imageSlot1);
-        AddSlot(slots, imageSlot2);
-        AddSlot(slots, imageSlot3);
-        AddSlot(slots, imageSlot4);
-
-        if (extraImageSlots != null)
-        {
-            for (int i = 0; i < extraImageSlots.Length; i++)
-                AddSlot(slots, extraImageSlots[i]);
-        }
-
-        return slots.ToArray();
-    }
-
-    private static void AddSlot(List<Image> slots, Image image)
-    {
-        if (image != null && !slots.Contains(image))
-            slots.Add(image);
-    }
-
     private static void AddText(List<TMP_Text> slots, TMP_Text text)
     {
         if (text != null && !slots.Contains(text))
             slots.Add(text);
     }
 
-    private static void AddButtonListeners(Button[] buttons, UnityEngine.Events.UnityAction action)
+    private static bool HasAnyText(TMP_Text[] texts)
     {
-        if (buttons == null)
-            return;
-
-        for (int i = 0; i < buttons.Length; i++)
-            buttons[i]?.onClick.AddListener(action);
-    }
-
-    private static void RemoveButtonListeners(Button[] buttons, UnityEngine.Events.UnityAction action)
-    {
-        if (buttons == null)
-            return;
-
-        for (int i = 0; i < buttons.Length; i++)
-            buttons[i]?.onClick.RemoveListener(action);
-    }
-
-    private static void SetButtonsActive(Button[] buttons, bool active)
-    {
-        if (buttons == null)
-            return;
-
-        for (int i = 0; i < buttons.Length; i++)
-            SetButtonActive(buttons[i], active);
-    }
-
-    private static void SetButtonActive(Button button, bool active)
-    {
-        if (button != null)
-            button.gameObject.SetActive(active);
-    }
-
-    private static bool ContainsButton(Button[] buttons, Button button)
-    {
-        if (button == null || buttons == null)
+        if (texts == null)
             return false;
 
-        for (int i = 0; i < buttons.Length; i++)
+        for (int i = 0; i < texts.Length; i++)
         {
-            if (buttons[i] == button)
+            if (texts[i] != null)
                 return true;
         }
 
         return false;
     }
 
-    private void PlayCurrentPageMotion()
+    private static bool HasAnyImageSlot(NewsImageSlot[] slots)
     {
-        GameObject pageRoot = pages[currentPageIndex]?.pageRoot;
-
-        if (pageRoot == null)
-            return;
-
-        RectTransform rectTransform = pageRoot.transform as RectTransform;
-
-        if (rectTransform == null)
-            return;
-
-        if (!pageBasePositions.ContainsKey(rectTransform))
-            pageBasePositions.Add(rectTransform, rectTransform.anchoredPosition);
-
-        if (pageMotionRoutine != null)
-            StopCoroutine(pageMotionRoutine);
-
-        pageMotionRoutine = StartCoroutine(AnimatePageIn(pageRoot, rectTransform));
-    }
-
-    private IEnumerator AnimatePageIn(GameObject pageRoot, RectTransform rectTransform)
-    {
-        CanvasGroup canvasGroup = pageRoot.GetComponent<CanvasGroup>();
-
-        if (canvasGroup == null)
-            canvasGroup = pageRoot.AddComponent<CanvasGroup>();
-
-        Vector2 endPosition = pageBasePositions[rectTransform];
-        Vector2 startPosition = endPosition + pageStartOffset;
-        rectTransform.anchoredPosition = startPosition;
-        canvasGroup.alpha = 0f;
-
-        float elapsed = 0f;
-        float duration = Mathf.Max(0.01f, pageFadeDuration);
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / duration);
-            float eased = Mathf.SmoothStep(0f, 1f, t);
-
-            rectTransform.anchoredPosition = Vector2.LerpUnclamped(startPosition, endPosition, eased);
-            canvasGroup.alpha = eased;
-
-            yield return null;
-        }
-
-        rectTransform.anchoredPosition = endPosition;
-        canvasGroup.alpha = 1f;
-        pageMotionRoutine = null;
-    }
-
-    private void HandlePageButtonPointerFallback()
-    {
-        Mouse mouse = Mouse.current;
-
-        if (mouse == null || !mouse.leftButton.wasPressedThisFrame)
-            return;
-
-        Vector2 screenPoint = mouse.position.ReadValue();
-
-        if (IsPointerOnAnyButton(previousPageButtons, screenPoint))
-        {
-            ShowPreviousPage();
-            return;
-        }
-    }
-
-    private static bool IsPointerOnAnyButton(Button[] buttons, Vector2 screenPoint)
-    {
-        if (buttons == null)
+        if (slots == null)
             return false;
 
-        for (int i = 0; i < buttons.Length; i++)
+        for (int i = 0; i < slots.Length; i++)
         {
-            Button button = buttons[i];
-
-            if (button == null || !button.gameObject.activeInHierarchy || !button.interactable)
-                continue;
-
-            RectTransform rectTransform = button.transform as RectTransform;
-
-            if (rectTransform == null)
-                continue;
-
-            Canvas canvas = rectTransform.GetComponentInParent<Canvas>();
-            Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
-                ? canvas.worldCamera
-                : null;
-
-            if (RectTransformUtility.RectangleContainsScreenPoint(rectTransform, screenPoint, camera))
+            if (slots[i]?.image != null)
                 return true;
         }
 
         return false;
     }
+
 }

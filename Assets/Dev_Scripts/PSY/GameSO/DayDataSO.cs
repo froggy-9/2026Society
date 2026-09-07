@@ -42,10 +42,11 @@ public class DayDataSO : ScriptableObject
     [Tooltip("오늘 생성할 NPC 수입니다. 0이면 targetInspectionCount 수만큼 생성합니다.")]
     public int npcCount;
 
-    [Tooltip("오늘 정답이 불허가인 NPC 수입니다.")]
+    [HideInInspector]
+    [Tooltip("예전 고정 불허 NPC 수입니다. 현재는 NpcTableSO의 Invalid Npc Chance를 사용합니다.")]
     public int rejectNpcCount;
 
-    [Tooltip("불허가 NPC를 만들 때 사용할 사유입니다. 비워두면 기본 사유에서 랜덤 선택합니다.")]
+    [Tooltip("이 날짜에서 허용할 오류 종류입니다. 비워두면 NpcTableSO의 오류 가중치에서 랜덤 선택합니다.")]
     public NpcFailReason[] rejectReasons;
 
     [Header("Special NPC")]

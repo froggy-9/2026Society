@@ -47,6 +47,7 @@ public static class InspectionJudge
 
         DocumentData passport = npc.passport;
         DocumentData permit = npc.entryPermit;
+        DocumentData medicalCertificate = npc.medicalCertificate;
 
         switch (checkType)
         {
@@ -59,25 +60,36 @@ public static class InspectionJudge
             case RuleCheckType.EntryPermitRequired:
                 return permit != null;
 
+            case RuleCheckType.MedicalCertificateRequired:
+                return medicalCertificate != null;
+
             case RuleCheckType.PortraitMatch:
                 return passport != null && npc.portrait == passport.portrait;
 
             case RuleCheckType.NameMatch:
-                return TextMatches(npc.koreanName, passport?.koreanName, permit?.koreanName)
-                    && TextMatches(npc.englishSurname, passport?.englishSurname)
-                    && TextMatches(npc.englishGivenNames, passport?.englishGivenNames);
+                return TextMatches(npc.englishSurname, passport?.englishSurname, permit?.englishSurname, medicalCertificate?.englishSurname)
+                    && TextMatches(npc.englishGivenNames, passport?.englishGivenNames, permit?.englishGivenNames, medicalCertificate?.englishGivenNames);
 
             case RuleCheckType.GenderMatch:
                 return EnumMatches(npc.gender, passport?.gender, permit?.gender);
 
             case RuleCheckType.AgeMatch:
-                return IntMatches(npc.age, passport?.age, permit?.age);
+                return IntMatches(passport?.age, permit?.age);
+
+            case RuleCheckType.BirthDateMatch:
+                return TextMatches(npc.dateOfBirth, passport?.dateOfBirth, permit?.dateOfBirth);
 
             case RuleCheckType.OccupationMatch:
                 return TextMatches(npc.job, passport?.occupation, permit?.occupation);
 
             case RuleCheckType.ResidenceMatch:
                 return TextMatches(npc.address, passport?.residence, permit?.residence);
+
+            case RuleCheckType.FamilyRelationshipMatch:
+                return TextMatches(npc.family != null && npc.family.Length > 0 ? npc.family[0] : string.Empty, permit?.familyRelationship);
+
+            case RuleCheckType.MedicalHistoryMatch:
+                return TextMatches(npc.psychiatricHistory, permit?.psychiatricHistory, medicalCertificate?.medicalDiagnosis);
 
             case RuleCheckType.DocumentCodeMatch:
                 return TextMatches(npc.documentCode, passport?.documentCode, permit?.documentCode);
@@ -88,12 +100,16 @@ public static class InspectionJudge
             case RuleCheckType.PassportNotExpired:
                 return PassportIsValid(passport, currentDate);
 
+            case RuleCheckType.MedicalCertificateNotExpired:
+                return MedicalCertificateIsValid(medicalCertificate, currentDate);
+
             case RuleCheckType.NoCriminalRecord:
                 return !npc.hasCriminalRecord && !(permit?.hasCriminalRecord ?? false);
 
             case RuleCheckType.NoPsychiatricHistory:
                 return string.IsNullOrWhiteSpace(npc.psychiatricHistory)
-                    && string.IsNullOrWhiteSpace(permit?.psychiatricHistory);
+                    && string.IsNullOrWhiteSpace(permit?.psychiatricHistory)
+                    && string.IsNullOrWhiteSpace(medicalCertificate?.medicalDiagnosis);
 
             default:
                 return true;
@@ -112,6 +128,26 @@ public static class InspectionJudge
             return false;
 
         if (!DateTime.TryParse(passport.passportExpiryDate, out DateTime expiry))
+            return false;
+
+        if (!DateTime.TryParse(currentDate, out DateTime today))
+            return false;
+
+        return expiry.Date >= today.Date;
+    }
+
+    private static bool MedicalCertificateIsValid(DocumentData medicalCertificate, string currentDate)
+    {
+        if (medicalCertificate == null)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(medicalCertificate.medicalCertificateValidUntil))
+            return false;
+
+        if (string.IsNullOrWhiteSpace(currentDate))
+            return false;
+
+        if (!DateTime.TryParse(medicalCertificate.medicalCertificateValidUntil, out DateTime expiry))
             return false;
 
         if (!DateTime.TryParse(currentDate, out DateTime today))

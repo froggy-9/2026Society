@@ -100,12 +100,12 @@ TextureImporter:
       name: Button-Sheet_0
       rect:
         serializedVersion: 2
-        x: 2
+        x: 3
         y: 4
-        width: 134
-        height: 51
+        width: 133
+        height: 44
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -122,12 +122,12 @@ TextureImporter:
       name: Button-Sheet_1
       rect:
         serializedVersion: 2
-        x: 209
-        y: 6
-        width: 66
-        height: 51
+        x: 219
+        y: 21
+        width: 47
+        height: 31
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -144,12 +144,12 @@ TextureImporter:
       name: Button-Sheet_2
       rect:
         serializedVersion: 2
-        x: 350
-        y: 6
-        width: 66
-        height: 51
+        x: 359
+        y: 21
+        width: 47
+        height: 27
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -166,12 +166,12 @@ TextureImporter:
       name: Button-Sheet_3
       rect:
         serializedVersion: 2
-        x: 143
-        y: 6
-        width: 66
-        height: 51
+        x: 153
+        y: 21
+        width: 47
+        height: 31
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -188,12 +188,12 @@ TextureImporter:
       name: Button-Sheet_4
       rect:
         serializedVersion: 2
-        x: 284
-        y: 6
-        width: 66
-        height: 51
+        x: 293
+        y: 22
+        width: 47
+        height: 27
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []

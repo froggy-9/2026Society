@@ -24,6 +24,7 @@ public class RefugeesGameManager : MonoBehaviour
     public int InspectedNpcCount { get; private set; }
 
     private GameState previousState;
+    private bool startMapShown;
 
     private void Awake()
     {
@@ -60,26 +61,9 @@ public class RefugeesGameManager : MonoBehaviour
     {
         PleaResultLog.Clear();
 
-        int slot = SaveCardMenu.GetSelectedSlot();
-        bool canContinue = !SaveCardMenu.ShouldStartNewGame() && SaveCardMenu.HasSave(slot);
-
-        if (canContinue)
-        {
-            evaluationManager?.LoadGame(
-                SaveCardMenu.GetSavedScore(slot),
-                SaveCardMenu.GetSavedCorrectCount(slot),
-                SaveCardMenu.GetSavedWrongAcceptCount(slot),
-                SaveCardMenu.GetSavedWrongRejectCount(slot),
-                SaveCardMenu.GetSavedCumulativePerformanceScore(slot),
-                SaveCardMenu.GetSavedMaxCumulativePerformanceScore(slot)
-            );
-            CurrentDay = SaveCardMenu.GetSavedDay(slot);
-        }
-        else
-        {
-            evaluationManager?.ResetGame();
-            CurrentDay = 1;
-        }
+        evaluationManager?.ResetGame();
+        CurrentDay = 1;
+        startMapShown = false;
 
         StartDay();
     }
@@ -109,8 +93,15 @@ public class RefugeesGameManager : MonoBehaviour
 
     public void BeginDayNews()
     {
-        if (CurrentState != GameState.DayIntro)
+        if (CurrentState != GameState.DayIntro && CurrentState != GameState.StartMap)
             return;
+
+        if (CurrentState == GameState.DayIntro && CurrentDay == 1 && !startMapShown)
+        {
+            startMapShown = true;
+            SetState(GameState.StartMap);
+            return;
+        }
 
         SetState(GameState.News);
     }
@@ -133,12 +124,9 @@ public class RefugeesGameManager : MonoBehaviour
 
         InspectedNpcCount++;
 
-        bool hardPenalty = CurrentDay == 4;
-
         evaluationManager.SubmitJudgement(
             playerApproved,
             npcShouldBeApproved,
-            hardPenalty,
             npc,
             reason
         );
@@ -160,16 +148,6 @@ public class RefugeesGameManager : MonoBehaviour
         evaluationManager.CalculateResult(
             InspectedNpcCount,
             dayManager.Quota
-        );
-
-        SaveCardMenu.SaveProgress(
-            CurrentDay,
-            evaluationManager.TotalScore,
-            evaluationManager.CumulativeCorrectCount,
-            evaluationManager.CumulativeWrongAcceptCount,
-            evaluationManager.CumulativeWrongRejectCount,
-            evaluationManager.CumulativePerformanceScore,
-            evaluationManager.MaxCumulativePerformanceScore
         );
 
         if (evaluationManager.IsGameOver())
