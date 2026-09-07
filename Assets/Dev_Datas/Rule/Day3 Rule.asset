@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5e4ee7df97f32241bc8ccd461a11b4d, type: 3}
   m_Name: Day3 Rule
   m_EditorClassIdentifier: Assembly-CSharp::RuleSO
-  ruleID: 0
-  ruleName: Check Picture
+  ruleID: 3
+  ruleName: Day3
   description: Face
+  checkTypes: 
+  checkType: 0

@@ -53,7 +53,6 @@ public class DocumentData
 
     [Header("Passport")]
     public string issueDate;
-    public string issuingAuthority;
 
     [Tooltip("Format: yyyy-MM-dd")]
     public string passportExpiryDate;

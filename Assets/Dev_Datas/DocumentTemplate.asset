@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DocumentTemplateSO
   documentType: 0
   title: PASSPORT
-  issuer: REPUBLIC OF KOREA
   passportNumberLabel: Passport No.
   surnameLabel: Surname
   givenNamesLabel: Given Names
@@ -25,7 +24,6 @@ MonoBehaviour:
   birthDateLabel: Date of Birth
   issueDateLabel: Date of Issue
   expiryDateLabel: Date of Expiry
-  authorityLabel: Authority
   documentNumberLabel: Document No.
   occupationLabel: Occupation
   residenceLabel: Residence

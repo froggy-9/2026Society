@@ -149,9 +149,6 @@ public class NpcTableSO : ScriptableObject
     [Tooltip("만료 여권 오류를 만들 때 사용할 만료일 목록입니다. 현재 날짜보다 앞의 날짜를 넣습니다.")]
     public string[] expiredPassportExpiryDates;
 
-    [Tooltip("여권 발급기관 목록입니다.")]
-    public string[] issuingAuthorities;
-
     [Header("Medical Certificate Values")]
     [Tooltip("진단서 등록번호 목록입니다.")]
     public string[] medicalRegistrationNumbers;
@@ -321,7 +318,6 @@ public class NpcTableSO : ScriptableObject
         document.psychiatricHistory = npc.psychiatricHistory;
         document.medicalDiagnosis = npc.psychiatricHistory;
         document.issueDate = PickWeightedString(weightedPassportIssueDates, passportIssueDates, CreateIssueDate(currentDate));
-        document.issuingAuthority = Pick(issuingAuthorities, "Border Immigration Office");
         document.passportExpiryDate = PickWeightedString(weightedPassportExpiryDates, passportExpiryDates, CreateExpiryDate(currentDate));
         document.registrationNumber = PickWeightedString(weightedMedicalRegistrationNumbers, medicalRegistrationNumbers, CreateCode("MED"));
         document.medicalCertificateDate = PickWeightedString(weightedMedicalCertificateDates, medicalCertificateDates, CreateIssueDate(currentDate));

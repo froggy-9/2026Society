@@ -13,9 +13,6 @@ public class DocumentTemplateSO : ScriptableObject
     [Tooltip("문서 상단 제목입니다. 예: PASSPORT")]
     public string title = "PASSPORT";
 
-    [Tooltip("문서 상단 또는 본문 첫 줄에 표시할 발급 주체 문구입니다.")]
-    public string issuer = "REPUBLIC OF KOREA";
-
     [Header("Passport Labels")]
     [Tooltip("여권번호 라벨입니다.")]
     public string passportNumberLabel = "Passport No.";
@@ -46,9 +43,6 @@ public class DocumentTemplateSO : ScriptableObject
 
     [Tooltip("만료일 라벨입니다.")]
     public string expiryDateLabel = "Date of Expiry";
-
-    [Tooltip("발급기관 라벨입니다.")]
-    public string authorityLabel = "Authority";
 
     [Header("Permit Labels")]
     [Tooltip("입국허가서/기타 서류 번호 라벨입니다.")]

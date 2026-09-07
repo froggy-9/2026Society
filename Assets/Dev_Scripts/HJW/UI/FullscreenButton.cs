@@ -10,43 +10,55 @@ public class FullscreenButton : MonoBehaviour
     public Sprite fullscreenIcon;
     public Sprite windowIcon;
 
-    void Start()
+    [SerializeField, Min(16)] private int windowedWidth = 1600;
+
+    private FullScreenMode displayedMode;
+
+    void OnEnable()
     {
         UpdateButton();
+    }
+
+    void Update()
+    {
+        // Screen mode changes are applied after the current frame.
+        if (displayedMode != Screen.fullScreenMode)
+            UpdateButton();
     }
 
     public void ToggleFullscreen()
     {
         if (Screen.fullScreenMode == FullScreenMode.Windowed)
         {
-            // Ã¢ ¸ðµå ¡æ ÀüÃ¼ È­¸é
-            Screen.fullScreenMode = FullScreenMode.FullScreenWindow;
+            // ì°½ ëª¨ë“œ â†’ ì „ì²´ í™”ë©´
+            Resolution desktopResolution = Screen.currentResolution;
+            Screen.SetResolution(desktopResolution.width, desktopResolution.height,
+                FullScreenMode.FullScreenWindow);
         }
         else
         {
-            // ÀüÃ¼ È­¸é ¡æ Ã¢ ¸ðµå
-            Screen.fullScreenMode = FullScreenMode.Windowed;
+            // ì „ì²´ í™”ë©´ â†’ ì°½ ëª¨ë“œ
+            Resolution desktopResolution = Screen.currentResolution;
+            // Leave room for window borders while keeping an exact 16:9 ratio.
+            float maxWidth = Mathf.Min(windowedWidth, desktopResolution.width * 0.9f,
+                desktopResolution.height * 0.9f * 16f / 9f);
+            int sizeUnit = Mathf.Max(1, Mathf.FloorToInt(maxWidth / 16f));
+            Screen.SetResolution(sizeUnit * 16, sizeUnit * 9, FullScreenMode.Windowed);
         }
-
-        // ½ÇÁ¦ º¯°æµÈ »óÅÂ¸¦ ´Ù½Ã È®ÀÎ
-        UpdateButton();
-
-        Debug.Log("ÇöÀç È­¸é ¸ðµå : " + Screen.fullScreenMode);
     }
 
     void UpdateButton()
     {
-        if (Screen.fullScreenMode == FullScreenMode.Windowed)
+        displayedMode = Screen.fullScreenMode;
+        if (displayedMode == FullScreenMode.Windowed)
         {
-            // ÇöÀç Ã¢ ¸ðµå ¡æ ¹öÆ°Àº ÀüÃ¼ È­¸éÀ¸·Î ¹Ù²Ù´Â ±â´É
-            buttonText.text = "Full Screen";
-            icon.sprite = fullscreenIcon;
+            buttonText.text = "Windowed";
+            icon.sprite = windowIcon;
         }
         else
         {
-            // ÇöÀç ÀüÃ¼ È­¸é ¡æ ¹öÆ°Àº Ã¢ ¸ðµå·Î ¹Ù²Ù´Â ±â´É
-            buttonText.text = "Windowed";
-            icon.sprite = windowIcon;
+            buttonText.text = "Full Screen";
+            icon.sprite = fullscreenIcon;
         }
     }
 }

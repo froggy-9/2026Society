@@ -164,7 +164,6 @@ public class SpecialNpcSO : ScriptableObject
             psychiatricHistory = source.psychiatricHistory,
             medicalDiagnosis = source.medicalDiagnosis,
             issueDate = source.issueDate,
-            issuingAuthority = source.issuingAuthority,
             passportExpiryDate = source.passportExpiryDate,
             medicalCertificateDate = source.medicalCertificateDate,
             medicalCertificateValidUntil = source.medicalCertificateValidUntil

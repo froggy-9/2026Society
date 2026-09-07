@@ -81,8 +81,6 @@ MonoBehaviour:
   - 
   expiredPassportExpiryDates:
   - 
-  issuingAuthorities:
-  - 
   medicalRegistrationNumbers: []
   medicalCertificateDates: []
   medicalCertificateValidUntilDates: []

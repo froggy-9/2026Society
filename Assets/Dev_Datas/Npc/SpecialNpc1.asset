@@ -43,7 +43,6 @@ MonoBehaviour:
     criminalRecordDetails: 
     psychiatricHistory: 
     issueDate: 
-    issuingAuthority: 
     passportExpiryDate: 
   entryPermit:
     documentType: 0
@@ -64,7 +63,6 @@ MonoBehaviour:
     criminalRecordDetails: 
     psychiatricHistory: 
     issueDate: 
-    issuingAuthority: 
     passportExpiryDate: 
   useManualDecision: 1
   shouldApprove: 1
