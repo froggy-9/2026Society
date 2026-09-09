@@ -149,13 +149,27 @@ public class NPCManager : MonoBehaviour
                 ? dayData.npcCount
                 : Mathf.Max(1, dayData.maxInspectionCount);
 
-            for (int i = 0; i < randomCount; i++)
+            float expectedRejected = randomCount * Mathf.Clamp01(dayData.npcTable.invalidNpcChance);
+            int rejectedCount = Mathf.FloorToInt(expectedRejected);
+            if (Random.value < expectedRejected - rejectedCount)
+                rejectedCount++;
+
+            RuleSO inspectionRule = ScriptableObject.CreateInstance<RuleSO>();
+            inspectionRule.checkTypes = dayData.GetInspectionChecks();
+            if (dayData.rule != null)
             {
-                remainingNpcs.Add(dayData.npcTable.CreateRandomNpc(
-                    dayData.currentDate,
-                    dayData.rejectReasons,
-                    dayData.rule
-                ));
+                inspectionRule.bannedNationalities = dayData.rule.bannedNationalities;
+                inspectionRule.inspectedOccupations = dayData.rule.inspectedOccupations;
+            }
+            try
+            {
+                for (int i = 0; i < randomCount; i++)
+                    remainingNpcs.Add(dayData.npcTable.CreateNpcForDecision(
+                        dayData, inspectionRule, i >= rejectedCount));
+            }
+            finally
+            {
+                Destroy(inspectionRule);
             }
         }
 

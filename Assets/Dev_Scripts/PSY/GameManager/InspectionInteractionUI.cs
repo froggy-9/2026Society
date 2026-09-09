@@ -114,12 +114,14 @@ public class InspectionInteractionUI : MonoBehaviour
     {
         AddListeners();
         DocumentDrag.StateChanged += RefreshJudgementButtons;
+        DocumentDrag.DocumentOpened += RecordDocumentViewed;
         RefreshForCurrentNpc();
     }
 
     private void OnDisable()
     {
         DocumentDrag.StateChanged -= RefreshJudgementButtons;
+        DocumentDrag.DocumentOpened -= RecordDocumentViewed;
         RemoveListeners();
         UnsubscribeShownNpc();
     }
@@ -176,6 +178,13 @@ public class InspectionInteractionUI : MonoBehaviour
     {
         npcManager?.RequestNextNPC();
         RefreshNextNpcButton();
+    }
+
+    private void RecordDocumentViewed(DocumentDrag document)
+    {
+        if (shownNpc != null && shownNpc.IsReady && !judgementLocked
+            && document != null && document.IsShowingDocument && !document.IsFolded)
+            shownNpc.Data.hasViewedDocument = true;
     }
 
     private void Submit(bool approved)

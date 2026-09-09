@@ -10707,7 +10707,7 @@ MonoBehaviour:
   sfxSource: {fileID: 0}
   startBgm: {fileID: 8300000, guid: 7753cf8cfd45d2049b84100b219648a2, type: 3}
   defaultButtonSfx: {fileID: 8300000, guid: 959459be89029e4458918a843361781d, type: 3}
-  bgmLoopEndTime: 117
+  bgmLoopEndTime: 114
   defaultBgmVolume: 1
   defaultSfxVolume: 1
 --- !u!82 &2160000003

@@ -115,7 +115,8 @@ public class EvaluationManager : MonoBehaviour
             DeniedCount++;
 
         bool isCorrect = playerApproved == npcShouldBeApproved;
-        int performanceMoney = CalculateJudgementPerformanceMoney(isCorrect, currentDay);
+        bool qualifiesForCombo = npc == null || npc.DocumentCount < 2 || npc.hasViewedDocument;
+        int performanceMoney = CalculateJudgementPerformanceMoney(isCorrect, currentDay, qualifiesForCombo);
 
         if (isCorrect)
             CumulativeCorrectCount++;
@@ -152,7 +153,7 @@ public class EvaluationManager : MonoBehaviour
         Accuracy = inspectedCount == 0 ? 0f : (float)CorrectCount / inspectedCount;
 
         SettleDayOnce();
-        SettlementGrade grade = GetSettlementGrade(OwnedPerformanceMoney);
+        SettlementGrade grade = GetSettlementGrade(Accuracy);
         string comment = WrongCount > 0
             ? "일부 심사 과정에서 규정 위반 사항이 확인되었습니다."
             : grade.comment;
@@ -214,14 +215,14 @@ public class EvaluationManager : MonoBehaviour
         return config != null ? config.GetEndingNewsContent(endingType) : null;
     }
 
-    private int CalculateJudgementPerformanceMoney(bool isCorrect, int currentDay)
+    private int CalculateJudgementPerformanceMoney(bool isCorrect, int currentDay, bool qualifiesForCombo)
     {
         if (isCorrect)
         {
             CorrectCount++;
-            CorrectCombo++;
+            CorrectCombo = qualifiesForCombo ? CorrectCombo + 1 : 0;
             WrongCombo = 0;
-            return GetCorrectBaseBonus() + (CorrectCombo - 1) * GetCorrectStreakBonusStep();
+            return GetCorrectBaseBonus() + Mathf.Max(0, CorrectCombo - 1) * GetCorrectStreakBonusStep();
         }
 
         WrongCount++;
@@ -236,11 +237,11 @@ public class EvaluationManager : MonoBehaviour
         return -penalty;
     }
 
-    private SettlementGrade GetSettlementGrade(int ownedPerformanceMoney)
+    private SettlementGrade GetSettlementGrade(float accuracy)
     {
         return config != null
-            ? config.GetSettlementGrade(ownedPerformanceMoney)
-            : new SettlementGrade { label = ownedPerformanceMoney < 0 ? "미흡" : "보통", minimumOwnedPerformanceMoney = 0 };
+            ? config.GetSettlementGrade(accuracy)
+            : new SettlementGrade { label = "미흡", minimumAccuracy = 0f };
     }
 
     private int GetCorrectBaseBonus()

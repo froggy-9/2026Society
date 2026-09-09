@@ -68,9 +68,6 @@ MonoBehaviour:
   - Sofia
   - Viktor
   genders: 0000000001000000
-  ages: 
-  minAge: 18
-  maxAge: 70
   birthDates:
   - 2017-05-02
   - 2027-07-01
@@ -121,6 +118,9 @@ MonoBehaviour:
   - "\uC6B0\uC6B8\uC99D"
   - "\uBD84\uB178\uC870\uC808 \uC7A5\uC560"
   - "\uC591\uADF9\uC131 \uC7A5\uC560"
+  - "\uC870\uD604\uBCD1"
+  - "\uB9DD\uC0C1\uC7A5\uC560"
+  - "\uC678\uC0C1\uD6C4 \uC2A4\uD2B8\uB808\uC2A4 \uC7A5\uC560"
   - "\uC5C6\uC74C"
   passportNumbers:
   - M48038185
@@ -161,6 +161,10 @@ MonoBehaviour:
   - 2049-09-04
   - 2048-02-19
   - 2047-05-29
+  - 2050-05-11
+  - 2050-01-01
+  - 2050-06-16
+  - 2050-06-16
   medicalRegistrationNumbers:
   - 9893803
   - 3726237
@@ -194,6 +198,9 @@ MonoBehaviour:
   - 2049.02.14
   - 2049.06.30
   - 2050.01.29
+  - 2050.06.16
+  - 2050.06.16
+  - 2050.06.05
   photoPairs:
   - npcPhoto: {fileID: 21300000, guid: a07e57b231ec91744aede1e8f62a881c, type: 3}
     passportPhoto: {fileID: 21300000, guid: 52d36fe271f2fb842bf4ac07268787b9, type: 3}
@@ -219,13 +226,36 @@ MonoBehaviour:
     passportPhoto: {fileID: 21300000, guid: e634d3cf5cb2fb9409fbdbcb54058824, type: 3}
   - npcPhoto: {fileID: 21300000, guid: 2d33e1fc292ac3c4287322db72c04b6a, type: 3}
     passportPhoto: {fileID: 21300000, guid: 85737c10fb0463444be5bd4b98f01b44, type: 3}
-  invalidNpcChance: 0.3
-  passportSubmissionChance: 0.8
-  medicalHistoryChance: 0.2
-  medicalCertificateSubmissionChance: 0.8
-  failReasonWeights: []
-  additionalErrorChance: 0
-  maxFailReasonsPerNpc: 1
+  invalidNpcChance: 0.45
+  passportSubmissionChance: 0.85
+  medicalCertificateSubmissionChance: 0.5
+  medicalHistoryChance: 0.35
+  medicalDiagnosisMismatchChance: 0.5
+  failReasonWeights:
+  - reason: 5
+    weight: 1
+  - reason: 15
+    weight: 1
+  - reason: 11
+    weight: 1
+  - reason: 17
+    weight: 1
+  - reason: 4
+    weight: 1
+  - reason: 13
+    weight: 1
+  - reason: 1
+    weight: 1
+  - reason: 20
+    weight: 1
+  - reason: 8
+    weight: 1
+  - reason: 6
+    weight: 1
+  - reason: 19
+    weight: 1
+  additionalErrorChance: 0.4
+  maxFailReasonsPerNpc: 2
   weightedGenders: []
   weightedNationalities: []
   weightedJobs: []

@@ -51,6 +51,11 @@ public class DayDataSO : ScriptableObject
     [Tooltip("오늘 심사할 불허 사유입니다. 선택한 항목만 검사하며 NPC 오류 생성에도 사용합니다. 이전 날짜의 항목도 계속 검사하려면 포함하세요. 비우면 규칙 검사를 하지 않습니다.")]
     public NpcFailReason[] rejectReasons;
 
+    [Header("Basic Medical Checks")]
+    public bool requireMedicalCertificateForHistory = true;
+    public bool checkMedicalDiagnosis = true;
+    public bool checkMedicalCertificateValidity = true;
+
     [Header("Special NPC")]
     [Tooltip("특수 NPC 목록입니다. 각 SO의 등장 일차에 현재 일차가 들어 있으면 오늘 목록에 섞입니다.")]
     public SpecialNpcSO[] specialNpcs;
@@ -58,6 +63,12 @@ public class DayDataSO : ScriptableObject
     public RuleCheckType[] GetInspectionChecks()
     {
         var checks = new List<RuleCheckType>();
+        if (requireMedicalCertificateForHistory)
+            checks.Add(RuleCheckType.MedicalCertificateRequired);
+        if (checkMedicalDiagnosis)
+            checks.Add(RuleCheckType.MedicalDiagnosisMatch);
+        if (checkMedicalCertificateValidity)
+            checks.Add(RuleCheckType.MedicalCertificateValid);
         if (rejectReasons == null)
             return checks.ToArray();
 
@@ -72,7 +83,6 @@ public class DayDataSO : ScriptableObject
                 case NpcFailReason.NationalityMismatch:
                 case NpcFailReason.NameMismatch:
                 case NpcFailReason.GenderMismatch:
-                case NpcFailReason.AgeMismatch:
                 case NpcFailReason.BirthDateMismatch:
                 case NpcFailReason.PassportCodeMismatch:
                     check = day == 1 ? RuleCheckType.PassportEntryDataMatch : GetExistingMismatchCheck(reason);
@@ -80,8 +90,6 @@ public class DayDataSO : ScriptableObject
                 case NpcFailReason.PassportExpired: check = RuleCheckType.PassportNotExpired; break;
                 case NpcFailReason.BannedNationality: check = RuleCheckType.NationalityAllowed; break;
                 case NpcFailReason.OccupationMismatch: check = RuleCheckType.OccupationMatch; break;
-                case NpcFailReason.CriminalRecord: check = RuleCheckType.NoCriminalRecord; break;
-                case NpcFailReason.DocumentCodeMismatch: check = RuleCheckType.DocumentCodeMatch; break;
                 default: continue;
             }
 
@@ -99,7 +107,6 @@ public class DayDataSO : ScriptableObject
             NpcFailReason.NationalityMismatch => RuleCheckType.NationalityMatch,
             NpcFailReason.NameMismatch => RuleCheckType.NameMatch,
             NpcFailReason.GenderMismatch => RuleCheckType.GenderMatch,
-            NpcFailReason.AgeMismatch => RuleCheckType.AgeMatch,
             NpcFailReason.BirthDateMismatch => RuleCheckType.BirthDateMatch,
             NpcFailReason.PassportCodeMismatch => RuleCheckType.PassportCodeMatch,
             _ => RuleCheckType.None

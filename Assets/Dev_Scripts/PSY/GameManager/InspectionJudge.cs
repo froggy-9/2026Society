@@ -12,11 +12,10 @@ public static class InspectionJudge
         if (npc == null)
             return new InspectionDecision(false, "NPC data is missing.");
 
-        if (npc.useManualDecision)
-            return new InspectionDecision(npc.manualShouldApprove, npc.manualDecisionReason);
-
         if (rules == null)
-            return new InspectionDecision(true, "No active rule failed.");
+            return npc.useManualDecision
+                ? new InspectionDecision(npc.manualShouldApprove, npc.manualDecisionReason)
+                : new InspectionDecision(true, "No active rule failed.");
 
         foreach (RuleSO rule in rules)
         {
@@ -27,12 +26,20 @@ public static class InspectionJudge
 
             for (int i = 0; i < checkTypes.Length; i++)
             {
+                // Manual story decisions must still satisfy the basic medical checks.
+                bool medicalCheck = checkTypes[i] == RuleCheckType.MedicalCertificateRequired
+                    || checkTypes[i] == RuleCheckType.MedicalDiagnosisMatch
+                    || checkTypes[i] == RuleCheckType.MedicalCertificateValid;
+                if (npc.useManualDecision && !medicalCheck)
+                    continue;
                 if (!PassesCheck(npc, rule, checkTypes[i], currentDate, out string reason))
                     return new InspectionDecision(false, reason);
             }
         }
 
-        return new InspectionDecision(true, "No active rule failed.");
+        return npc.useManualDecision
+            ? new InspectionDecision(npc.manualShouldApprove, npc.manualDecisionReason)
+            : new InspectionDecision(true, "No active rule failed.");
     }
 
     private static bool PassesCheck(
@@ -48,11 +55,34 @@ public static class InspectionJudge
         DocumentData passport = npc.passport;
         DocumentData permit = npc.entryPermit;
         DocumentData medicalCertificate = npc.medicalCertificate;
+        bool hasMedicalHistory = npc.HasMedicalHistory
+            || NPCData.HasMedicalRecord(permit?.psychiatricHistory);
 
         switch (checkType)
         {
             case RuleCheckType.None:
                 return true;
+
+            case RuleCheckType.MedicalCertificateRequired:
+                reason = "Medical history requires a medical certificate.";
+                return !hasMedicalHistory || medicalCertificate != null;
+
+            case RuleCheckType.MedicalDiagnosisMatch:
+                reason = "Medical diagnosis does not match the entry declaration.";
+                if (medicalCertificate == null)
+                    return !hasMedicalHistory;
+                return permit != null
+                    && IsSameText(permit.psychiatricHistory, medicalCertificate.medicalDiagnosis);
+
+            case RuleCheckType.MedicalCertificateValid:
+                reason = "Medical certificate dates are invalid or expired.";
+                if (medicalCertificate == null)
+                    return !hasMedicalHistory;
+                return DateTime.TryParse(currentDate, out DateTime medicalToday)
+                    && DateTime.TryParse(medicalCertificate.medicalCertificateDate, out DateTime issued)
+                    && DateTime.TryParse(medicalCertificate.medicalCertificateValidUntil, out DateTime validUntil)
+                    && issued.Date <= medicalToday.Date
+                    && medicalToday.Date <= validUntil.Date;
 
             case RuleCheckType.PassportRequired:
                 return passport != null;
@@ -73,9 +103,6 @@ public static class InspectionJudge
             case RuleCheckType.GenderMatch:
                 return EnumMatches(npc.gender, passport?.gender, permit?.gender);
 
-            case RuleCheckType.AgeMatch:
-                return IntMatches(passport?.age, permit?.age);
-
             case RuleCheckType.BirthDateMatch:
                 return TextMatches(npc.dateOfBirth, passport?.dateOfBirth, permit?.dateOfBirth);
 
@@ -84,17 +111,11 @@ public static class InspectionJudge
                     return true;
                 return TextMatches(npc.job, passport?.occupation, permit?.occupation);
 
-            case RuleCheckType.DocumentCodeMatch:
-                return TextMatches(npc.documentCode, passport?.documentCode, permit?.documentCode);
-
             case RuleCheckType.PassportCodeMatch:
                 return TextMatches(npc.passportCode, passport?.passportCode, permit?.passportCode);
 
             case RuleCheckType.PassportNotExpired:
                 return PassportIsValid(passport, currentDate);
-
-            case RuleCheckType.NoCriminalRecord:
-                return !npc.hasCriminalRecord && !(permit?.hasCriminalRecord ?? false);
 
             case RuleCheckType.NationalityAllowed:
                 if (rule.bannedNationalities == null)
@@ -115,7 +136,7 @@ public static class InspectionJudge
 
             case RuleCheckType.NationalityMatch:
                 return passport != null && permit != null
-                    && IsSameText(passport.nationality, permit.nationality);
+                    && NPCData.AddressMatchesNationality(passport.nationality, permit.residence);
 
             default:
                 return true;
@@ -171,10 +192,8 @@ public static class InspectionJudge
             && IsSameText(passport.passportCode, permit.passportCode)
             && IsSameText(passport.englishSurname, permit.englishSurname)
             && IsSameText(passport.englishGivenNames, permit.englishGivenNames)
-            && IsSameText(passport.nationality, permit.nationality)
+            && NPCData.AddressMatchesNationality(passport.nationality, permit.residence)
             && IsSameText(passport.dateOfBirth, permit.dateOfBirth)
-            && passport.age > 0
-            && passport.age == permit.age
             && passport.gender == permit.gender;
     }
 
@@ -196,28 +215,6 @@ public static class InspectionJudge
             }
 
             if (!string.Equals(baseline, normalized, StringComparison.OrdinalIgnoreCase))
-                return false;
-        }
-
-        return true;
-    }
-
-    private static bool IntMatches(params int?[] values)
-    {
-        int? baseline = null;
-
-        foreach (int? value in values)
-        {
-            if (!value.HasValue || value.Value <= 0)
-                continue;
-
-            if (!baseline.HasValue)
-            {
-                baseline = value;
-                continue;
-            }
-
-            if (baseline.Value != value.Value)
                 return false;
         }
 

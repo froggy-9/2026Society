@@ -26,7 +26,6 @@ public class DocumentData
     public string englishGivenNames;
 
     public Gender gender;
-    public int age;
     public Sprite portrait;
     public string nationality;
     public string dateOfBirth;
@@ -37,13 +36,10 @@ public class DocumentData
     public string familyRelationship;
 
     [Header("Codes")]
-    public string documentCode;
     public string passportCode;
     public string registrationNumber;
 
     [Header("Risk")]
-    public bool hasCriminalRecord;
-    public string criminalRecordDetails;
 
     [TextArea(2, 5)]
     public string psychiatricHistory;

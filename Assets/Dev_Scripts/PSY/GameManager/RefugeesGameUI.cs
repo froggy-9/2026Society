@@ -283,6 +283,8 @@ public class RefugeesGameUI : MonoBehaviour
         bool showNews = state == GameState.News;
         bool showDayIntro = state == GameState.DayIntro;
         bool showStartMap = state == GameState.StartMap;
+        bool keepResultUntilGameOver = state == GameState.GameOver
+            && gameOverView != null && resultPanel != null && resultPanel.activeSelf;
         bool keepResultUntilDayIntro = showDayIntro
             && dayIntroPanel != null
             && resultPanel != null
@@ -300,7 +302,7 @@ public class RefugeesGameUI : MonoBehaviour
             FadeOutPanel(newsPanel, newsPopupMotionRoot);
 
         SetActive(inspectionPanel, state == GameState.Inspection);
-        if (!keepResultUntilDayIntro)
+        if (!keepResultUntilDayIntro && !keepResultUntilGameOver)
             SetActive(resultPanel, state == GameState.Result);
 
         if (showStartMap)
@@ -345,7 +347,7 @@ public class RefugeesGameUI : MonoBehaviour
             dailyEvaluationView?.Show(gameManager);
             PlayPanelOpenMotion(resultPanel, null, resultStartOffset);
         }
-        else if (!keepResultUntilDayIntro)
+        else if (!keepResultUntilDayIntro && !keepResultUntilGameOver)
             dailyEvaluationView?.Hide();
 
         if (state == GameState.Ending)
@@ -818,11 +820,37 @@ public class RefugeesGameUI : MonoBehaviour
         SetActive(newsPanel, false);
         SetActive(rulePanel, false);
         SetActive(inspectionPanel, false);
-        SetActive(resultPanel, false);
         SetActive(startMapPanel, false);
         SetMainUiVisible(false);
         endingNewsView?.Hide();
 
-        gameOverView?.Show();
+        if (resultPanel != null && resultPanel.activeSelf)
+        {
+            if (resultHandoffRoutine != null)
+            {
+                StopCoroutine(resultHandoffRoutine);
+                resultHandoffRoutine = null;
+            }
+            if (panelMotionRoutines.TryGetValue(resultPanel, out Coroutine motion) && motion != null)
+            {
+                StopCoroutine(motion);
+                panelMotionRoutines[resultPanel] = null;
+            }
+            CanvasGroup group = resultPanel.GetComponent<CanvasGroup>();
+            if (group != null)
+            {
+                group.alpha = 1f;
+                group.interactable = false;
+                group.blocksRaycasts = true;
+            }
+        }
+
+        gameOverView?.Show(() =>
+        {
+            if (gameManager == null || gameManager.CurrentState != GameState.GameOver)
+                return;
+            dailyEvaluationView?.Hide();
+            SetActive(resultPanel, false);
+        });
     }
 }

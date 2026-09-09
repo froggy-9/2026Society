@@ -10,6 +10,11 @@ public enum Gender
 [System.Serializable]
 public class NPCData
 {
+    [System.NonSerialized] public bool hasViewedDocument;
+
+    public int DocumentCount => (passport != null ? 1 : 0)
+        + (entryPermit != null ? 1 : 0) + (medicalCertificate != null ? 1 : 0);
+
     [Header("Person")]
     [HideInInspector]
     [FormerlySerializedAs("koreanName")]
@@ -22,7 +27,6 @@ public class NPCData
     public string englishGivenNames;
 
     public Gender gender;
-    public int age;
     public Sprite portrait;
 
     [Tooltip("화면의 NPC와 여권 사진이 같은 인물인지 나타냅니다. 오류가 있는 일반 NPC는 false가 됩니다.")]
@@ -33,15 +37,23 @@ public class NPCData
     [Header("Profile")]
     public string job;
     public string address;
+    public static bool AddressMatchesNationality(string country, string residence)
+    {
+        if (string.IsNullOrWhiteSpace(country) || string.IsNullOrWhiteSpace(residence))
+            return false;
+
+        string prefix = country.Trim() + " ";
+        string value = residence.Trim();
+        return value.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(value.Substring(prefix.Length));
+    }
+
     public string[] family;
 
     [Header("Codes")]
-    public string documentCode;
     public string passportCode;
 
     [Header("Risk")]
-    public bool hasCriminalRecord;
-    public string criminalRecordDetails;
 
     [TextArea(2, 5)]
     public string psychiatricHistory;

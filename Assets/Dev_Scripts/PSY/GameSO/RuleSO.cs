@@ -10,16 +10,16 @@ public enum RuleCheckType
     PortraitMatch = 4,
     NameMatch = 5,
     GenderMatch = 6,
-    AgeMatch = 7,
     BirthDateMatch = 8,
     OccupationMatch = 9,
-    DocumentCodeMatch = 13,
     PassportCodeMatch = 14,
     PassportNotExpired = 15,
-    NoCriminalRecord = 17,
     NationalityAllowed = 19,
     NationalityMatch = 20,
-    PassportEntryDataMatch = 21
+    PassportEntryDataMatch = 21,
+    MedicalCertificateRequired = 22,
+    MedicalDiagnosisMatch = 23,
+    MedicalCertificateValid = 24
 }
 
 [CreateAssetMenu(menuName = "Refugees/Rule")]

@@ -28,6 +28,5 @@ MonoBehaviour:
   occupationLabel: Occupation
   residenceLabel: Residence
   familyLabel: Family
-  criminalRecordLabel: Criminal Record
   medicalNoteLabel: Medical Note
   noRecordText: None

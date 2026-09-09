@@ -15,13 +15,16 @@ MonoBehaviour:
   day: 3
   currentDate: 2050-06-19
   maxInspectionCount: 12
-  dayTime: 720
+  dayTime: 600
   news: {fileID: 11400000, guid: f2a79bbf28db88c4a8d6f5e0b8e335d8, type: 2}
   ruleDescription: 
   rule: {fileID: 11400000, guid: 559423897aa64604da011ddf6bf34eb7, type: 2}
   npcTable: {fileID: 11400000, guid: aeea35ca5fa97d74f8ca367ba7b6b306, type: 2}
   npcCount: 0
   rejectNpcCount: 0
-  rejectReasons: 0100000004000000110000000d000000130000000800000012000000100000000f0000000500000006000000070000000b000000
+  rejectReasons: 010000001400000004000000110000000d000000130000000f00000005000000060000000b000000
+  requireMedicalCertificateForHistory: 1
+  checkMedicalDiagnosis: 1
+  checkMedicalCertificateValidity: 1
   specialNpcs:
   - {fileID: 11400000, guid: 8c33a5a52ffb8e24e9d51939123e777b, type: 2}

@@ -35,14 +35,11 @@ public enum NpcFailReason
     PortraitMismatch = 4,
     NameMismatch = 5,
     GenderMismatch = 6,
-    AgeMismatch = 7,
     OccupationMismatch = 8,
     BirthDateMismatch = 11,
     PassportExpired = 13,
     PassportCodeMismatch = 15,
-    DocumentCodeMismatch = 16,
     NationalityMismatch = 17,
-    CriminalRecord = 18,
     BannedNationality = 19,
     MissingEntryPermit = 20
 }
@@ -107,14 +104,6 @@ public class NpcTableSO : ScriptableObject
     [Tooltip("랜덤으로 뽑을 성별 목록입니다.")]
     public Gender[] genders = { Gender.Male, Gender.Female };
 
-    [Tooltip("나이를 직접 목록으로 관리하고 싶을 때 넣습니다. 비워두면 Min Age~Max Age 사이에서 뽑습니다.")]
-    public int[] ages;
-
-    [Tooltip("Ages가 비어 있을 때 사용할 최소 나이입니다.")]
-    public int minAge = 18;
-
-    [Tooltip("Ages가 비어 있을 때 사용할 최대 나이입니다.")]
-    public int maxAge = 70;
 
     [Tooltip("생년월일 목록입니다. 형식은 yyyy-MM-dd를 권장합니다. 값이 있으면 나이는 이 날짜로 다시 계산됩니다.")]
     public string[] birthDates;
@@ -172,23 +161,27 @@ public class NpcTableSO : ScriptableObject
     public float invalidNpcChance = 0.3f;
 
     [Range(0f, 1f)]
-    [Tooltip("일반 NPC가 여권을 가지고 올 확률입니다. 입국 신고서는 항상 제출합니다.")]
-    public float passportSubmissionChance = 0.8f;
+    [Tooltip("일반 NPC 후보가 여권을 제출할 확률입니다.")]
+    public float passportSubmissionChance = 0.85f;
+
+    [Range(0f, 1f)]
+    [Tooltip("병력이 있는 일반 NPC 후보가 진단서를 제출할 확률입니다.")]
+    public float medicalCertificateSubmissionChance = 0.5f;
 
     [Range(0f, 1f)]
     [Tooltip("NPC가 병원 내역/병명을 가지고 생성될 확률입니다.")]
     public float medicalHistoryChance = 0.2f;
 
     [Range(0f, 1f)]
-    [Tooltip("병원 내역이 있는 일반 NPC가 진단서를 가지고 올 확률입니다. 병원 내역이 없으면 제출하지 않습니다.")]
-    public float medicalCertificateSubmissionChance = 0.8f;
+    [Tooltip("신고서와 진단서를 모두 가진 후보 NPC의 병명을 서로 다르게 생성할 확률입니다. 하루 O/X 분포 조정 전 추첨 확률입니다.")]
+    public float medicalDiagnosisMismatchChance = 0.5f;
 
     [Tooltip("불합격 NPC일 때 선택될 오류 종류별 가중치입니다. 비워두면 기본 오류 목록에서 랜덤 선택합니다.")]
     public WeightedFailReason[] failReasonWeights;
 
     [Range(0f, 1f)]
     [Tooltip("불합격 NPC가 오류를 하나 더 가질 확률입니다. 0이면 오류는 한 개만 생깁니다.")]
-    public float additionalErrorChance = 0f;
+    public float additionalErrorChance = 0.4f;
 
     [Min(1)]
     [Tooltip("한 NPC에게 동시에 적용될 수 있는 최대 오류 개수입니다.")]
@@ -246,6 +239,29 @@ public class NpcTableSO : ScriptableObject
         return CreateRandomNpc(currentDate, failReason, null);
     }
 
+    public NPCData CreateNpcForDecision(DayDataSO day, RuleSO inspectionRule, bool shouldApprove)
+    {
+        int[] photoHistory = recentPhotoIndexes.ToArray();
+        var rules = new[] { inspectionRule };
+        // Rejected candidates must not consume the visible NPC photo history.
+        for (int attempt = 0; attempt < 256; attempt++)
+        {
+            recentPhotoIndexes.Clear();
+            foreach (int index in photoHistory)
+                recentPhotoIndexes.Enqueue(index);
+
+            NpcFailReason reason = shouldApprove ? NpcFailReason.None : PickWeightedFailReason(day.rejectReasons);
+            NPCData candidate = CreateRandomNpc(day.currentDate, reason, day.rejectReasons, day.rule);
+            if (InspectionJudge.Evaluate(candidate, rules, day.currentDate).shouldApprove == shouldApprove)
+                return candidate;
+        }
+
+        recentPhotoIndexes.Clear();
+        foreach (int index in photoHistory)
+            recentPhotoIndexes.Enqueue(index);
+        throw new InvalidOperationException($"NpcTable '{name}': could not generate an {(shouldApprove ? "approved" : "rejected")} NPC for Day {day.day}. Check document data and inspection rules.");
+    }
+
     private NPCData CreateRandomNpc(string currentDate, NpcFailReason failReason, NpcFailReason[] allowedFailReasons, RuleSO rule = null)
     {
         NPCData npc = new NPCData();
@@ -256,20 +272,17 @@ public class NpcTableSO : ScriptableObject
         npc.englishSurname = PickEnglishSurname();
         npc.englishGivenNames = PickEnglishGivenNames();
         npc.gender = PickWeightedGender(weightedGenders, Pick(genders, Gender.Male));
-        npc.age = PickAge();
         npc.nationality = PickWeightedString(weightedNationalities, nationalities, "Stateless");
-        npc.dateOfBirth = Pick(birthDates, CreateBirthDate(npc.age, currentDate));
-        npc.age = GetAgeFromBirthDate(npc.dateOfBirth, currentDate, npc.age);
+        npc.dateOfBirth = PickRequiredBirthDate();
         NpcPhotoSet photoSet = PickPhotoSet();
         npc.portrait = GetNpcPhoto(photoSet);
         npc.passportPhotoMatchesNpc = true;
         npc.job = PickWeightedString(weightedJobs, jobs, "None");
-        npc.address = Pick(addresses, "Unknown");
+        npc.address = PickAddressForNationality(npc.nationality);
         npc.family = new[] { PickWeightedString(weightedFamilyRelationships, familyRelationships, "None") };
         npc.psychiatricHistory = UnityEngine.Random.value <= medicalHistoryChance
             ? PickWeightedString(weightedMedicalHistories, medicalHistories, string.Empty)
             : string.Empty;
-        npc.documentCode = CreateCode("DOC");
         if (!npc.HasMedicalHistory)
             npc.psychiatricHistory = string.Empty;
         npc.passportCode = PickWeightedString(weightedPassportNumbers, passportNumbers, CreateCode("PAS"));
@@ -285,6 +298,7 @@ public class NpcTableSO : ScriptableObject
         ApplyFailReason(npc, currentDate, failReason, rule);
         ApplyAdditionalFailReasons(npc, currentDate, failReason, allowedFailReasons, rule);
         ApplySubmissionChance(npc);
+        ApplyMedicalDiagnosisMismatch(npc);
 
         return npc;
     }
@@ -304,17 +318,13 @@ public class NpcTableSO : ScriptableObject
         document.englishSurname = npc.englishSurname;
         document.englishGivenNames = npc.englishGivenNames;
         document.gender = npc.gender;
-        document.age = npc.age;
         document.portrait = npc.portrait;
         document.nationality = npc.nationality;
         document.dateOfBirth = npc.dateOfBirth;
         document.occupation = npc.job;
         document.residence = npc.address;
         document.familyRelationship = npc.family != null && npc.family.Length > 0 ? npc.family[0] : string.Empty;
-        document.documentCode = npc.documentCode;
         document.passportCode = npc.passportCode;
-        document.hasCriminalRecord = npc.hasCriminalRecord;
-        document.criminalRecordDetails = npc.criminalRecordDetails;
         document.psychiatricHistory = npc.psychiatricHistory;
         document.medicalDiagnosis = npc.psychiatricHistory;
         document.issueDate = PickWeightedString(weightedPassportIssueDates, passportIssueDates, CreateIssueDate(currentDate));
@@ -329,10 +339,7 @@ public class NpcTableSO : ScriptableObject
         if (UnityEngine.Random.value > invalidNpcChance)
             return NpcFailReason.None;
 
-        if (reasons == null || reasons.Length == 0)
-            return PickWeightedFailReason();
-
-        return reasons[UnityEngine.Random.Range(0, reasons.Length)];
+        return PickWeightedFailReason(reasons);
     }
 
     private NpcPhotoSet PickPhotoSet()
@@ -388,8 +395,6 @@ public class NpcTableSO : ScriptableObject
         if (npc == null || failReason == NpcFailReason.None)
             return;
 
-        ApplyInvalidPassportPhoto(npc);
-
         switch (failReason)
         {
             case NpcFailReason.BannedNationality:
@@ -397,8 +402,13 @@ public class NpcTableSO : ScriptableObject
                 if (!string.IsNullOrWhiteSpace(banned))
                 {
                     npc.nationality = banned;
+                    npc.address = PickAddressForNationality(banned);
                     if (npc.passport != null) npc.passport.nationality = banned;
-                    if (npc.entryPermit != null) npc.entryPermit.nationality = banned;
+                    if (npc.entryPermit != null)
+                    {
+                        npc.entryPermit.nationality = banned;
+                        npc.entryPermit.residence = npc.address;
+                    }
                 }
                 break;
 
@@ -412,20 +422,11 @@ public class NpcTableSO : ScriptableObject
 
             case NpcFailReason.NationalityMismatch:
                 if (npc.entryPermit != null)
-                    npc.entryPermit.nationality = PickDifferentText(npc.nationality, nationalities, "Unknown");
-                break;
-
-            case NpcFailReason.CriminalRecord:
-                npc.hasCriminalRecord = true;
-                npc.criminalRecordDetails = "Criminal record";
-                if (npc.entryPermit != null)
-                {
-                    npc.entryPermit.hasCriminalRecord = true;
-                    npc.entryPermit.criminalRecordDetails = npc.criminalRecordDetails;
-                }
+                    npc.entryPermit.residence = PickAddressForNationality(npc.nationality, true);
                 break;
 
             case NpcFailReason.PortraitMismatch:
+                ApplyInvalidPassportPhoto(npc);
                 break;
 
             case NpcFailReason.NameMismatch:
@@ -437,10 +438,6 @@ public class NpcTableSO : ScriptableObject
                     npc.entryPermit.gender = npc.gender == Gender.Male ? Gender.Female : Gender.Male;
                 break;
 
-            case NpcFailReason.AgeMismatch:
-                if (npc.entryPermit != null)
-                    npc.entryPermit.age = Mathf.Max(0, npc.age + UnityEngine.Random.Range(1, 6));
-                break;
 
             case NpcFailReason.OccupationMismatch:
                 if (npc.entryPermit != null)
@@ -450,8 +447,7 @@ public class NpcTableSO : ScriptableObject
             case NpcFailReason.BirthDateMismatch:
                 if (npc.entryPermit != null)
                 {
-                    npc.entryPermit.dateOfBirth = CreateBirthDate(Mathf.Max(0, npc.age + UnityEngine.Random.Range(1, 5)), currentDate);
-                    npc.entryPermit.age = GetAgeFromBirthDate(npc.entryPermit.dateOfBirth, currentDate, npc.entryPermit.age);
+                    npc.entryPermit.dateOfBirth = PickDifferentValue(npc.dateOfBirth, birthDates, "Birth Dates", true);
                 }
                 break;
 
@@ -462,14 +458,35 @@ public class NpcTableSO : ScriptableObject
 
             case NpcFailReason.PassportCodeMismatch:
                 if (npc.entryPermit != null)
-                    npc.entryPermit.passportCode = CreateCode("PAS");
+                    npc.entryPermit.passportCode = PickDifferentValue(npc.passportCode, passportNumbers, "Passport Numbers");
                 break;
 
-            case NpcFailReason.DocumentCodeMismatch:
-                if (npc.entryPermit != null)
-                    npc.entryPermit.documentCode = CreateCode("DOC");
-                break;
         }
+    }
+
+    private string PickAddressForNationality(string country, bool differentCountry = false)
+    {
+        var candidates = new System.Collections.Generic.List<string>();
+        if (addresses != null && nationalities != null)
+        {
+            foreach (string address in addresses)
+            {
+                foreach (string registeredCountry in nationalities)
+                {
+                    if (!NPCData.AddressMatchesNationality(registeredCountry, address))
+                        continue;
+                    bool matches = string.Equals(registeredCountry.Trim(), country?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    if (matches != differentCountry)
+                        candidates.Add(address.Trim());
+                    break;
+                }
+            }
+        }
+
+        if (candidates.Count == 0)
+            throw new InvalidOperationException($"NpcTable '{name}': no configured {(differentCountry ? "foreign" : "matching")} address for '{country}'.");
+
+        return candidates[UnityEngine.Random.Range(0, candidates.Count)];
     }
 
     private void ApplyInvalidPassportPhoto(NPCData npc)
@@ -483,14 +500,27 @@ public class NpcTableSO : ScriptableObject
 
     private void ApplySubmissionChance(NPCData npc)
     {
-        if (npc == null)
+        if (UnityEngine.Random.value >= passportSubmissionChance)
+            npc.passport = null;
+        if (UnityEngine.Random.value >= medicalCertificateSubmissionChance)
+            npc.medicalCertificate = null;
+    }
+
+    private void ApplyMedicalDiagnosisMismatch(NPCData npc)
+    {
+        if (npc.entryPermit == null || npc.medicalCertificate == null
+            || !NPCData.HasMedicalRecord(npc.entryPermit.psychiatricHistory)
+            || UnityEngine.Random.value >= medicalDiagnosisMismatchChance)
             return;
 
-        if (passportSubmissionChance < 1f && UnityEngine.Random.value >= passportSubmissionChance)
-            npc.passport = null;
+        var diagnoses = new List<string>();
+        if (medicalHistories != null)
+            foreach (string diagnosis in medicalHistories)
+                if (NPCData.HasMedicalRecord(diagnosis))
+                    diagnoses.Add(diagnosis);
 
-        if (medicalCertificateSubmissionChance < 1f && UnityEngine.Random.value >= medicalCertificateSubmissionChance)
-            npc.medicalCertificate = null;
+        npc.medicalCertificate.medicalDiagnosis = PickDifferentValue(
+            npc.entryPermit.psychiatricHistory, diagnoses.ToArray(), "Medical Histories");
     }
 
     private void ApplyAdditionalFailReasons(
@@ -521,17 +551,7 @@ public class NpcTableSO : ScriptableObject
 
     private NpcFailReason PickExtraFailReason(NpcFailReason primaryFailReason, NpcFailReason[] allowedFailReasons)
     {
-        for (int i = 0; i < 8; i++)
-        {
-            NpcFailReason nextReason = allowedFailReasons != null && allowedFailReasons.Length > 0
-                ? allowedFailReasons[UnityEngine.Random.Range(0, allowedFailReasons.Length)]
-                : PickWeightedFailReason();
-
-            if (nextReason != NpcFailReason.None && nextReason != primaryFailReason)
-                return nextReason;
-        }
-
-        return NpcFailReason.None;
+        return PickWeightedFailReason(allowedFailReasons, primaryFailReason);
     }
 
     private Sprite GetNpcPhoto(NpcPhotoSet photoSet)
@@ -582,13 +602,13 @@ public class NpcTableSO : ScriptableObject
     private string PickDifferentEnglishSurname(string currentName)
     {
         string[] values = GetEnglishSurnameValues();
-        return PickDifferentName(currentName, values);
+        return PickDifferentValue(currentName, values, "English Surnames");
     }
 
     private string PickDifferentEnglishGivenNames(string currentName)
     {
         string[] values = GetEnglishGivenNameValues();
-        return PickDifferentName(currentName, values);
+        return PickDifferentValue(currentName, values, "English Given Names");
     }
 
     private void ApplyNameMismatch(NPCData npc)
@@ -614,18 +634,44 @@ public class NpcTableSO : ScriptableObject
 
     private static string PickDifferentName(string currentName, string[] values)
     {
-        if (values == null || values.Length == 0)
-            return currentName + " ?";
+        return PickDifferentValue(currentName, values, "Values");
+    }
 
-        for (int i = 0; i < values.Length; i++)
+    private static string PickDifferentValue(string current, string[] values, string field, bool compareDates = false)
+    {
+        var candidates = new List<string>();
+        var unique = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        DateTime currentDate = default;
+        if (compareDates && !DateTime.TryParse(current, out currentDate))
+            throw new InvalidOperationException($"NpcTable {field}: invalid current date '{current}'.");
+
+        if (values != null)
         {
-            string name = values[UnityEngine.Random.Range(0, values.Length)];
+            foreach (string value in values)
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                    continue;
+                string candidate = value.Trim();
+                string key = candidate;
+                if (compareDates)
+                {
+                    if (!DateTime.TryParse(candidate, out DateTime date))
+                        throw new InvalidOperationException($"NpcTable {field}: invalid date '{candidate}'.");
+                    if (date.Date == currentDate.Date)
+                        continue;
+                    key = date.ToString("yyyy-MM-dd");
+                }
+                else if (string.Equals(candidate, current?.Trim(), StringComparison.OrdinalIgnoreCase))
+                    continue;
 
-            if (!string.Equals(name, currentName, StringComparison.OrdinalIgnoreCase))
-                return name;
+                if (unique.Add(key))
+                    candidates.Add(candidate);
+            }
         }
 
-        return currentName + " ?";
+        if (candidates.Count == 0)
+            throw new InvalidOperationException($"NpcTable {field}: configure a value different from '{current}'.");
+        return candidates[UnityEngine.Random.Range(0, candidates.Count)];
     }
 
     private static NpcFailReason PickDefaultFailReason()
@@ -637,14 +683,11 @@ public class NpcTableSO : ScriptableObject
             NpcFailReason.PortraitMismatch,
             NpcFailReason.NameMismatch,
             NpcFailReason.GenderMismatch,
-            NpcFailReason.AgeMismatch,
             NpcFailReason.OccupationMismatch,
             NpcFailReason.BirthDateMismatch,
             NpcFailReason.PassportExpired,
             NpcFailReason.PassportCodeMismatch,
-            NpcFailReason.DocumentCodeMismatch,
-            NpcFailReason.NationalityMismatch,
-            NpcFailReason.CriminalRecord
+            NpcFailReason.NationalityMismatch
         };
 
         return defaults[UnityEngine.Random.Range(0, defaults.Length)];
@@ -675,40 +718,14 @@ public class NpcTableSO : ScriptableObject
         return date.AddDays(-UnityEngine.Random.Range(30, 730)).ToString("yyyy-MM-dd");
     }
 
-    private static string CreateBirthDate(int age, string currentDate)
+    private string PickRequiredBirthDate()
     {
-        DateTime date = DateTime.Today;
-
-        if (!string.IsNullOrWhiteSpace(currentDate) && !DateTime.TryParse(currentDate, out date))
-            date = DateTime.Today;
-
-        return date.AddYears(-Mathf.Max(0, age)).AddDays(-UnityEngine.Random.Range(0, 365)).ToString("yyyy-MM-dd");
-    }
-
-    private int PickAge()
-    {
-        if (ages != null && ages.Length > 0)
-            return ages[UnityEngine.Random.Range(0, ages.Length)];
-
-        return UnityEngine.Random.Range(Mathf.Min(minAge, maxAge), Mathf.Max(minAge, maxAge) + 1);
-    }
-
-    private static int GetAgeFromBirthDate(string birthDate, string currentDate, int fallbackAge)
-    {
-        if (string.IsNullOrWhiteSpace(birthDate) || !DateTime.TryParse(birthDate, out DateTime birth))
-            return fallbackAge;
-
-        DateTime current = DateTime.Today;
-
-        if (!string.IsNullOrWhiteSpace(currentDate) && !DateTime.TryParse(currentDate, out current))
-            current = DateTime.Today;
-
-        int age = current.Year - birth.Year;
-
-        if (birth.Date > current.Date.AddYears(-age))
-            age--;
-
-        return Mathf.Max(0, age);
+        if (birthDates == null || birthDates.Length == 0)
+            throw new InvalidOperationException($"NpcTable '{name}': Birth Dates must be configured.");
+        string value = birthDates[UnityEngine.Random.Range(0, birthDates.Length)];
+        if (!DateTime.TryParse(value, out _))
+            throw new InvalidOperationException($"NpcTable '{name}': invalid birth date '{value}'.");
+        return value;
     }
 
     private static string CreateExpiredDate(string currentDate)
@@ -813,23 +830,31 @@ public class NpcTableSO : ScriptableObject
         };
     }
 
-    private NpcFailReason PickWeightedFailReason()
+    private NpcFailReason PickWeightedFailReason(NpcFailReason[] allowed = null, NpcFailReason excluded = NpcFailReason.None)
     {
         if (failReasonWeights == null || failReasonWeights.Length == 0)
-            return PickDefaultFailReason();
+        {
+            if (allowed == null || allowed.Length == 0)
+                return PickDefaultFailReason();
+            var candidates = new List<NpcFailReason>();
+            foreach (NpcFailReason reason in allowed)
+                if (reason != NpcFailReason.None && reason != excluded && !candidates.Contains(reason))
+                    candidates.Add(reason);
+            return candidates.Count == 0 ? NpcFailReason.None : candidates[UnityEngine.Random.Range(0, candidates.Count)];
+        }
 
         float totalWeight = 0f;
 
         for (int i = 0; i < failReasonWeights.Length; i++)
         {
-            if (failReasonWeights[i] == null || failReasonWeights[i].reason == NpcFailReason.None)
+            if (!IsEligibleFailReason(failReasonWeights[i], allowed, excluded))
                 continue;
 
             totalWeight += Mathf.Max(0f, failReasonWeights[i].weight);
         }
 
         if (totalWeight <= 0f)
-            return PickDefaultFailReason();
+            throw new InvalidOperationException($"NpcTable '{name}': no positive error weight for the active inspection items.");
 
         float point = UnityEngine.Random.value * totalWeight;
 
@@ -837,16 +862,26 @@ public class NpcTableSO : ScriptableObject
         {
             WeightedFailReason weighted = failReasonWeights[i];
 
-            if (weighted == null || weighted.reason == NpcFailReason.None)
+            if (!IsEligibleFailReason(weighted, allowed, excluded))
                 continue;
 
             point -= Mathf.Max(0f, weighted.weight);
 
-            if (point <= 0f)
+            if (point < 0f)
                 return weighted.reason;
         }
 
-        return PickDefaultFailReason();
+        for (int i = failReasonWeights.Length - 1; i >= 0; i--)
+            if (IsEligibleFailReason(failReasonWeights[i], allowed, excluded))
+                return failReasonWeights[i].reason;
+        return NpcFailReason.None;
+    }
+
+    private static bool IsEligibleFailReason(WeightedFailReason entry, NpcFailReason[] allowed, NpcFailReason excluded)
+    {
+        return entry != null && entry.weight > 0f && entry.reason != NpcFailReason.None
+            && entry.reason != excluded
+            && (allowed == null || allowed.Length == 0 || Array.IndexOf(allowed, entry.reason) >= 0);
     }
 
     private string PickEnglishSurname()
@@ -885,31 +920,11 @@ public class NpcTableSO : ScriptableObject
 
     private string[] GetEnglishSurnameValues()
     {
-        if (namePairs == null || namePairs.Length == 0)
-            return englishSurnames;
-
-        List<string> values = new List<string>();
-        for (int i = 0; i < namePairs.Length; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(namePairs[i]?.englishSurname))
-                values.Add(namePairs[i].englishSurname);
-        }
-
-        return values.ToArray();
+        return englishSurnames;
     }
 
     private string[] GetEnglishGivenNameValues()
     {
-        if (namePairs == null || namePairs.Length == 0)
-            return englishGivenNames;
-
-        List<string> values = new List<string>();
-        for (int i = 0; i < namePairs.Length; i++)
-        {
-            if (!string.IsNullOrWhiteSpace(namePairs[i]?.englishGivenNames))
-                values.Add(namePairs[i].englishGivenNames);
-        }
-
-        return values.ToArray();
+        return englishGivenNames;
     }
 }

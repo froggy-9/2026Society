@@ -78,7 +78,7 @@ public class SlidePopupTabButton : MonoBehaviour, IPointerEnterHandler, IPointer
 
     private void OpenPopup()
     {
-        ResetVisualToHiddenPosition();
+        hovering = false;
 
         if (gameUI == null)
             gameUI = FindFirstObjectByType<RefugeesGameUI>();
@@ -89,11 +89,4 @@ public class SlidePopupTabButton : MonoBehaviour, IPointerEnterHandler, IPointer
             gameUI?.OpenRulePopup();
     }
 
-    private void ResetVisualToHiddenPosition()
-    {
-        hovering = false;
-
-        if (motionTarget != null)
-            motionTarget.anchoredPosition = hiddenPosition;
-    }
 }

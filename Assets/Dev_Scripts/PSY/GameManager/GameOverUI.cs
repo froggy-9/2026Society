@@ -69,6 +69,11 @@ public class GameOverUI : MonoBehaviour
 
     public void Show()
     {
+        Show(null);
+    }
+
+    public void Show(System.Action onBackgroundCovered)
+    {
         isShowing = true;
 
         if (!gameObject.activeSelf)
@@ -94,7 +99,7 @@ public class GameOverUI : MonoBehaviour
 
         SetTitleButtonVisible(false);
 
-        sequenceRoutine = StartCoroutine(PlaySequence());
+        sequenceRoutine = StartCoroutine(PlaySequence(onBackgroundCovered));
     }
 
     public void HideImmediate()
@@ -143,10 +148,13 @@ public class GameOverUI : MonoBehaviour
             titleButton.interactable = visible;
     }
 
-    private IEnumerator PlaySequence()
+    private IEnumerator PlaySequence(System.Action onBackgroundCovered)
     {
         if (blackPanelGroup != null)
+        {
             yield return FadeCanvasGroup(blackPanelGroup, 0f, 1f, blackFadeDuration, true);
+            onBackgroundCovered?.Invoke();
+        }
 
         if (gameOverText != null)
         {

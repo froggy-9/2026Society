@@ -30,11 +30,12 @@ public class PerformanceGrade
 [System.Serializable]
 public class SettlementGrade
 {
-    [Tooltip("보유 성과금에 따라 결과 도장에 표시할 등급명입니다.")]
+    [Tooltip("당일 정확도에 따라 결과 도장에 표시할 등급명입니다.")]
     public string label = "양호";
 
-    [Tooltip("이 등급에 필요한 최소 보유 성과금입니다.")]
-    public int minimumOwnedPerformanceMoney = 40;
+    [Tooltip("이 등급에 필요한 최소 정확도입니다. 0.85는 85%입니다.")]
+    [Range(0f, 1f)]
+    public float minimumAccuracy = 0.7f;
 
     [Tooltip("결산 화면 경고/안내 영역에 표시할 문구입니다.")]
     [TextArea(2, 4)]
@@ -129,11 +130,11 @@ public class EvaluationConfigSO : ScriptableObject
     [Tooltip("보유 성과금 기준 등급입니다. 높은 기준 순서로 넣는 것을 권장합니다.")]
     public SettlementGrade[] settlementGrades =
     {
-        new SettlementGrade { label = "탁월", minimumOwnedPerformanceMoney = 120, comment = "매우 안정적인 심사 성과가 확인되었습니다." },
-        new SettlementGrade { label = "우수", minimumOwnedPerformanceMoney = 90, comment = "전반적으로 우수한 심사 성과가 확인되었습니다." },
-        new SettlementGrade { label = "양호", minimumOwnedPerformanceMoney = 40, comment = "기본적인 심사 성과가 유지되었습니다." },
-        new SettlementGrade { label = "보통", minimumOwnedPerformanceMoney = 0, comment = "성과금 관리에 주의가 필요합니다." },
-        new SettlementGrade { label = "미흡", minimumOwnedPerformanceMoney = -999999, comment = "보유 성과금이 부족합니다." }
+        new SettlementGrade { label = "탁월", minimumAccuracy = .95f, comment = "매우 안정적인 심사 성과가 확인되었습니다." },
+        new SettlementGrade { label = "우수", minimumAccuracy = .85f, comment = "전반적으로 우수한 심사 성과가 확인되었습니다." },
+        new SettlementGrade { label = "양호", minimumAccuracy = .7f, comment = "기본적인 심사 성과가 유지되었습니다." },
+        new SettlementGrade { label = "보통", minimumAccuracy = .5f, comment = "성과금 관리에 주의가 필요합니다." },
+        new SettlementGrade { label = "미흡", minimumAccuracy = 0f, comment = "보유 성과금이 부족합니다." }
     };
 
     [Header("Legacy Accuracy Grade")]
@@ -187,10 +188,10 @@ public class EvaluationConfigSO : ScriptableObject
         return rentCost + foodCost + heatingCost;
     }
 
-    public SettlementGrade GetSettlementGrade(int ownedPerformanceMoney)
+    public SettlementGrade GetSettlementGrade(float accuracy)
     {
         if (settlementGrades == null || settlementGrades.Length == 0)
-            return new SettlementGrade { label = "보통", minimumOwnedPerformanceMoney = 0 };
+            return new SettlementGrade { label = "보통", minimumAccuracy = 0f };
 
         SettlementGrade fallback = settlementGrades[settlementGrades.Length - 1];
 
@@ -201,29 +202,11 @@ public class EvaluationConfigSO : ScriptableObject
             if (grade == null)
                 continue;
 
-            if (ownedPerformanceMoney >= grade.minimumOwnedPerformanceMoney)
+            if (accuracy >= grade.minimumAccuracy)
                 return grade;
         }
 
         return fallback;
-    }
-
-    public int GetTopSettlementThreshold()
-    {
-        if (settlementGrades == null || settlementGrades.Length == 0)
-            return 120;
-
-        int top = settlementGrades[0] != null ? settlementGrades[0].minimumOwnedPerformanceMoney : 120;
-
-        for (int i = 1; i < settlementGrades.Length; i++)
-        {
-            SettlementGrade grade = settlementGrades[i];
-
-            if (grade != null)
-                top = Mathf.Max(top, grade.minimumOwnedPerformanceMoney);
-        }
-
-        return Mathf.Max(1, top);
     }
 
     public PerformanceGrade GetGrade(float accuracy)

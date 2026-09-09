@@ -5,6 +5,7 @@ using UnityEngine.UI;
 public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     public static event System.Action StateChanged;
+    public static event System.Action<DocumentDrag> DocumentOpened;
 
     [Header("UI")]
     [SerializeField] private GameObject smallPassportUI;
@@ -90,6 +91,7 @@ public class DocumentDrag : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             detailPassportUI.SetActive(true);
 
             ApplyDeskScale();
+            DocumentOpened?.Invoke(this);
             StateChanged?.Invoke();
         }
         else

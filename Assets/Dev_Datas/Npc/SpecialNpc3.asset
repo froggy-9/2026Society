@@ -17,7 +17,6 @@ MonoBehaviour:
   englishSurname: 
   englishGivenNames: 
   gender: 0
-  age: 0
   portrait: {fileID: 21300000, guid: 7537ac3dc263f6f4682997450ec356b7, type: 3}
   nationality: 
   dateOfBirth: 
@@ -32,18 +31,14 @@ MonoBehaviour:
     englishSurname: 
     englishGivenNames: 
     gender: 0
-    age: 0
     portrait: {fileID: 0}
     nationality: 
     dateOfBirth: 
     occupation: 
     residence: 
     familyRelationship: 
-    documentCode: 
     passportCode: 
     registrationNumber: 
-    hasCriminalRecord: 0
-    criminalRecordDetails: 
     psychiatricHistory: 
     medicalDiagnosis: 
     issueDate: 
@@ -57,18 +52,14 @@ MonoBehaviour:
     englishSurname: 
     englishGivenNames: 
     gender: 0
-    age: 0
     portrait: {fileID: 0}
     nationality: 
     dateOfBirth: 
     occupation: 
     residence: 
     familyRelationship: 
-    documentCode: 
     passportCode: 
     registrationNumber: 
-    hasCriminalRecord: 0
-    criminalRecordDetails: 
     psychiatricHistory: 
     medicalDiagnosis: 
     issueDate: 
@@ -82,18 +73,14 @@ MonoBehaviour:
     englishSurname: 
     englishGivenNames: 
     gender: 0
-    age: 0
     portrait: {fileID: 0}
     nationality: 
     dateOfBirth: 
     occupation: 
     residence: 
     familyRelationship: 
-    documentCode: 
     passportCode: 
     registrationNumber: 
-    hasCriminalRecord: 0
-    criminalRecordDetails: 
     psychiatricHistory: 
     medicalDiagnosis: 
     issueDate: 

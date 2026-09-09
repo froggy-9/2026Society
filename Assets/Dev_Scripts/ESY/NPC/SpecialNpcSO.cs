@@ -25,8 +25,6 @@ public class SpecialNpcSO : ScriptableObject
     [Tooltip("성별입니다.")]
     public Gender gender;
 
-    [Tooltip("생년월일을 기준으로 자동 계산됩니다. 생년월일이 비어 있거나 형식이 맞지 않을 때만 예비값으로 사용됩니다.")]
-    public int age;
 
     [Tooltip("화면에 서 있는 NPC 얼굴/전신 스프라이트입니다.")]
     public Sprite portrait;
@@ -109,14 +107,12 @@ public class SpecialNpcSO : ScriptableObject
 
     public NPCData CreateNpc(string currentDate)
     {
-        int calculatedAge = GetAgeFromBirthDate(dateOfBirth, currentDate, age);
 
         NPCData npc = new NPCData
         {
             englishSurname = englishSurname,
             englishGivenNames = englishGivenNames,
             gender = gender,
-            age = calculatedAge,
             portrait = portrait,
             nationality = nationality,
             dateOfBirth = dateOfBirth,
@@ -162,18 +158,14 @@ public class SpecialNpcSO : ScriptableObject
             englishSurname = source.englishSurname,
             englishGivenNames = source.englishGivenNames,
             gender = source.gender,
-            age = source.age,
             portrait = source.portrait,
             nationality = source.nationality,
             dateOfBirth = source.dateOfBirth,
             occupation = source.occupation,
             residence = source.residence,
             familyRelationship = source.familyRelationship,
-            documentCode = source.documentCode,
             passportCode = source.passportCode,
             registrationNumber = source.registrationNumber,
-            hasCriminalRecord = source.hasCriminalRecord,
-            criminalRecordDetails = source.criminalRecordDetails,
             psychiatricHistory = source.psychiatricHistory,
             medicalDiagnosis = source.medicalDiagnosis,
             issueDate = source.issueDate,
@@ -203,27 +195,9 @@ public class SpecialNpcSO : ScriptableObject
         if (string.IsNullOrWhiteSpace(document.dateOfBirth))
             document.dateOfBirth = npc.dateOfBirth;
 
-        document.age = GetAgeFromBirthDate(document.dateOfBirth, currentDate, npc.age);
 
         if (string.IsNullOrWhiteSpace(document.medicalDiagnosis))
             document.medicalDiagnosis = npc.psychiatricHistory;
     }
 
-    private static int GetAgeFromBirthDate(string birthDate, string currentDate, int fallbackAge)
-    {
-        if (string.IsNullOrWhiteSpace(birthDate) || !System.DateTime.TryParse(birthDate, out System.DateTime birth))
-            return fallbackAge;
-
-        System.DateTime current = System.DateTime.Today;
-
-        if (!string.IsNullOrWhiteSpace(currentDate) && !System.DateTime.TryParse(currentDate, out current))
-            current = System.DateTime.Today;
-
-        int age = current.Year - birth.Year;
-
-        if (birth.Date > current.Date.AddYears(-age))
-            age--;
-
-        return Mathf.Max(0, age);
-    }
 }

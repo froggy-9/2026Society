@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Serialization;
 
 public class DocumentViewUI : MonoBehaviour
 {
@@ -30,11 +31,13 @@ public class DocumentViewUI : MonoBehaviour
 
     [SerializeField] private TMP_Text entrySurnameText;
     [SerializeField] private TMP_Text entryGivenNameText;
-    [SerializeField] private TMP_Text entryAgeText;
+    [FormerlySerializedAs("entryAgeText")]
+    [SerializeField] private TMP_Text entryBirthDateText;
     [SerializeField] private TMP_Text entryGenderText;
     [SerializeField] private TMP_Text entryOccupationText;
     [SerializeField] private TMP_Text entryResidenceText;
-    [SerializeField] private TMP_Text entryDocumentCodeText;
+    [FormerlySerializedAs("entryDocumentCodeText")]
+    [SerializeField] private TMP_Text entryPassportNumberText;
     [SerializeField] private TMP_Text entryFamilyRelationshipText;
     [SerializeField] private TMP_Text entryMedicalHistoryText;
 
@@ -128,15 +131,12 @@ public class DocumentViewUI : MonoBehaviour
         SetText(entrySurnameText, document.englishSurname);
         SetText(entryGivenNameText, document.englishGivenNames);
 
-        SetText(
-            entryAgeText,
-            document.age > 0 ? document.age.ToString() : string.Empty
-        );
+        SetText(entryBirthDateText, document.dateOfBirth);
 
         SetText(entryGenderText, document.gender.ToString());
         SetText(entryOccupationText, document.occupation);
         SetText(entryResidenceText, document.residence);
-        SetText(entryDocumentCodeText, document.documentCode);
+        SetText(entryPassportNumberText, document.passportCode);
         SetText(entryFamilyRelationshipText, document.familyRelationship);
         SetText(entryMedicalHistoryText, document.psychiatricHistory);
     }

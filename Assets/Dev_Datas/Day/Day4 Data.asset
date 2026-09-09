@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DayDataSO
   day: 4
   currentDate: 2050-06-20
-  maxInspectionCount: 11
+  maxInspectionCount: 20
   dayTime: 600
   news: {fileID: 11400000, guid: 30b825a4ae60f66469d51629c7b4cdd3, type: 2}
   ruleDescription: 
@@ -22,5 +22,8 @@ MonoBehaviour:
   npcTable: {fileID: 11400000, guid: aeea35ca5fa97d74f8ca367ba7b6b306, type: 2}
   npcCount: 0
   rejectNpcCount: 0
-  rejectReasons: 0100000014000000040000000500000006000000070000000b0000000f000000110000000d000000
+  rejectReasons: 01000000140000000400000005000000060000000b0000000f000000110000000d000000
+  requireMedicalCertificateForHistory: 1
+  checkMedicalDiagnosis: 1
+  checkMedicalCertificateValidity: 1
   specialNpcs: []

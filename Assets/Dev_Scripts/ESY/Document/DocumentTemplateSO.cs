@@ -57,9 +57,6 @@ public class DocumentTemplateSO : ScriptableObject
     [Tooltip("가족관계 라벨입니다.")]
     public string familyLabel = "Family";
 
-    [Tooltip("전과 기록 라벨입니다.")]
-    public string criminalRecordLabel = "Criminal Record";
-
     [Tooltip("의료/정신병력 기록 라벨입니다.")]
     public string medicalNoteLabel = "Medical Note";
 
